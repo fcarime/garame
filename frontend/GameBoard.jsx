@@ -19,14 +19,24 @@ import {
 
 const INITIAL_POT = 1000;
 
-export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2] }) {
+export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000 }) {
   const [bgIndex] = useState(() => Math.floor(Math.random() * 12));
   const accent = BG_ACCENT[bgIndex];
   const [gameState, setGameState] = useState("setup");
-  const [players] = useState([
-    { id: 0, name: "Joueur 1", isAI: gameMode === "ia" },
-    { id: 1, name: gameMode === "ia" ? "IA" : "Joueur 2", isAI: gameMode === "ia" }
-  ]);
+  const [players] = useState(() => {
+    const getName = (idx) => {
+      if (gameMode === "online") {
+        return idx === myIndex ? (localPseudo || `Joueur ${idx + 1}`) : (remotePseudo || `Joueur ${idx === 0 ? 1 : 2}`);
+      }
+      if (gameMode === "ia") return idx === 0 ? (localPseudo || "Joueur 1") : "IA";
+      return idx === 0 ? "Joueur 1" : "Joueur 2";
+    };
+    return [
+      { id: 0, name: getName(0), isAI: false },
+      { id: 1, name: getName(1), isAI: gameMode === "ia" },
+    ];
+  });
+  const [myBankroll, setMyBankroll] = useState(initialBankroll);
   const [hands, setHands] = useState([[], []]);
   const [pot, setPot] = useState(0);
   const [scores, setScores] = useState([0, 0]);
@@ -130,10 +140,16 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setGameOver(true);
     });
 
+    socket.on("bankrollUpdated", (bankrolls) => {
+      const myName = players[myIndex].name;
+      if (typeof bankrolls[myName] === "number") setMyBankroll(bankrolls[myName]);
+    });
+
     return () => {
       socket.off("roundStarted");
       socket.off("cardPlayed");
       socket.off("opponentDisconnected");
+      socket.off("bankrollUpdated");
     };
   }, [gameMode, socket]);
 
@@ -253,6 +269,13 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     if (newScores[winner] >= 3) {
       setGameOver(true);
       setMessage(`${players[winner].name} remporte la partie et les 2 000 FCFA!`);
+      if (gameMode === "online" && socket && myIndex === 0) {
+        socket.emit("gameResult", {
+          roomCode,
+          winnerPseudo: players[winner].name,
+          loserPseudo: players[1 - winner].name,
+        });
+      }
     } else {
       setTimeout(() => {
         setCurrentRound(prev => prev + (hasBonusWin ? 2 : 1));
@@ -278,8 +301,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const myDisplayName = gameMode === "multiplayer"
     ? players[currentPlayer].name
     : gameMode === "online"
-      ? `Joueur ${myIndex + 1}`
-      : "Vous";
+      ? players[myIndex].name
+      : (localPseudo || "Vous");
 
   const myScore = gameMode === "multiplayer"
     ? scores[currentPlayer]
@@ -576,6 +599,11 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             <div style={{ fontSize: "12px", fontWeight: "800", color: "#4ade80" }}>
               {myScore}<span style={{ fontSize: "8px", color: "rgba(255,255,255,0.35)", marginLeft: "2px" }}>/3</span>
             </div>
+            {gameMode === "online" && (
+              <div style={{ fontSize: "9px", color: "#F59E0B", fontWeight: "700", marginTop: "1px" }}>
+                {myBankroll.toLocaleString("fr-FR")} FCFA
+              </div>
+            )}
           </div>
           {myTurn && (
             <div style={{
@@ -710,12 +738,18 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
               {scores[myIndex] > scores[opponentIndex] ? "Vous remportez" : "L'adversaire remporte"}
             </div>
 
-            <div style={{
-              fontSize: "28px", fontWeight: "900", color: "#F59E0B",
-              textShadow: "0 0 20px rgba(245,158,11,0.5)",
-              marginBottom: "24px",
-            }}>
-              2 000 FCFA
+            <div style={{ marginBottom: "24px" }}>
+              <div style={{
+                fontSize: "28px", fontWeight: "900", color: "#F59E0B",
+                textShadow: "0 0 20px rgba(245,158,11,0.5)",
+              }}>
+                {scores[myIndex] >= scores[opponentIndex] ? "+2 000" : "-2 000"} FCFA
+              </div>
+              {gameMode === "online" && (
+                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>
+                  Bankroll : <span style={{ color: "#F59E0B", fontWeight: "700" }}>{myBankroll.toLocaleString("fr-FR")} FCFA</span>
+                </div>
+              )}
             </div>
 
             <div style={{

@@ -11,7 +11,7 @@ function getSocket() {
   return socketInstance;
 }
 
-export default function OnlineLobby({ onGameStart, onBack }) {
+export default function OnlineLobby({ pseudo, onGameStart, onBack }) {
   const [screen, setScreen] = useState("menu");
   const [roomCode, setRoomCode] = useState("");
   const [inputCode, setInputCode] = useState("");
@@ -43,12 +43,12 @@ export default function OnlineLobby({ onGameStart, onBack }) {
       setRoomCode(code);
       setScreen("waiting");
     };
-    const onOpponentJoined = () => {
-      onGameStartRef.current(socket, 0, roomCodeRef.current);
+    const onOpponentJoined = ({ opponentPseudo }) => {
+      onGameStartRef.current(socket, 0, roomCodeRef.current, opponentPseudo ?? "Joueur 2");
     };
-    const onRoomJoined = ({ roomCode: code }) => {
+    const onRoomJoined = ({ roomCode: code, opponentPseudo }) => {
       roomCodeRef.current = code;
-      onGameStartRef.current(socket, 1, code);
+      onGameStartRef.current(socket, 1, code, opponentPseudo ?? "Joueur 1");
     };
     const onJoinError = (msg) => setError(msg);
 
@@ -68,13 +68,13 @@ export default function OnlineLobby({ onGameStart, onBack }) {
     };
   }, []);
 
-  const createRoom = () => { if (connected) { setError(""); getSocket().emit("createRoom"); } };
+  const createRoom = () => { if (connected) { setError(""); getSocket().emit("createRoom", { pseudo }); } };
   const joinRoom  = () => {
     if (!connected) return;
     const code = inputCode.trim().toUpperCase();
     if (!code) return;
     setError("");
-    getSocket().emit("joinRoom", { roomCode: code });
+    getSocket().emit("joinRoom", { roomCode: code, pseudo });
   };
 
   const copyCode = () => {

@@ -9,37 +9,109 @@ const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
+app.use(express.json());
+
+// ── Base utilisateurs en mémoire ──────────────────────────────────────────
+// Clé : pseudo (string), valeur : { pseudo, bankroll, gamesPlayed, gamesWon }
+const users = new Map();
+
+function getUser(pseudo) {
+  if (!pseudo) return null;
+  const key = pseudo.trim().toLowerCase();
+  if (!users.has(key)) {
+    users.set(key, { pseudo: pseudo.trim(), bankroll: 100000, gamesPlayed: 0, gamesWon: 0 });
+  }
+  return users.get(key);
+}
+
+// ── REST API utilisateurs ─────────────────────────────────────────────────
+app.get("/api/user/:pseudo", (req, res) => {
+  const user = getUser(req.params.pseudo);
+  if (!user) return res.status(400).json({ error: "pseudo requis" });
+  res.json(user);
+});
+
+// Synchronisation bankroll depuis localStorage client (si serveur redémarre)
+app.post("/api/user/sync", (req, res) => {
+  const { pseudo, bankroll } = req.body;
+  if (!pseudo) return res.status(400).json({ error: "pseudo requis" });
+  const key = pseudo.trim().toLowerCase();
+  if (!users.has(key)) {
+    users.set(key, { pseudo: pseudo.trim(), bankroll: bankroll ?? 100000, gamesPlayed: 0, gamesWon: 0 });
+  }
+  res.json(users.get(key));
+});
+
+// ── Salles de jeu ─────────────────────────────────────────────────────────
 const rooms = {};
 
 io.on("connection", (socket) => {
   console.log("Connecté:", socket.id);
 
-  socket.on("createRoom", () => {
+  socket.on("createRoom", ({ pseudo } = {}) => {
     const code = Math.random().toString(36).substr(2, 6).toUpperCase();
-    rooms[code] = { players: [socket.id] };
+    const user = getUser(pseudo);
+    rooms[code] = { players: [socket.id], pseudos: [pseudo ?? "Joueur 1"] };
+    socket.pseudo = pseudo;
     socket.join(code);
-    socket.emit("roomCreated", { roomCode: code, playerIndex: 0 });
-    console.log(`Salle ${code} créée`);
+    socket.emit("roomCreated", {
+      roomCode: code,
+      playerIndex: 0,
+      bankroll: user?.bankroll ?? 100000,
+    });
+    console.log(`Salle ${code} créée par ${pseudo}`);
   });
 
-  socket.on("joinRoom", ({ roomCode }) => {
+  socket.on("joinRoom", ({ roomCode, pseudo }) => {
     const room = rooms[roomCode];
     if (!room) return socket.emit("joinError", "Salle introuvable");
     if (room.players.length >= 2) return socket.emit("joinError", "Salle pleine");
 
+    const user = getUser(pseudo);
     room.players.push(socket.id);
+    room.pseudos.push(pseudo ?? "Joueur 2");
+    socket.pseudo = pseudo;
     socket.join(roomCode);
-    socket.emit("roomJoined", { roomCode, playerIndex: 1 });
-    socket.to(roomCode).emit("opponentJoined");
-    console.log(`Joueur rejoint salle ${roomCode}`);
+
+    // Envoie à celui qui rejoint : son index + pseudo de l'hôte
+    socket.emit("roomJoined", {
+      roomCode,
+      playerIndex: 1,
+      opponentPseudo: room.pseudos[0],
+      bankroll: user?.bankroll ?? 100000,
+    });
+    // Envoie à l'hôte : pseudo du joueur qui vient de rejoindre
+    socket.to(roomCode).emit("opponentJoined", { opponentPseudo: pseudo ?? "Joueur 2" });
+    console.log(`${pseudo} a rejoint la salle ${roomCode}`);
   });
 
-  // L'hôte envoie les mains au début de chaque manche
+  // Résultat de partie → mise à jour des bankrolls
+  socket.on("gameResult", ({ roomCode, winnerPseudo, loserPseudo }) => {
+    if (!winnerPseudo || !loserPseudo) return;
+
+    const winner = getUser(winnerPseudo);
+    const loser  = getUser(loserPseudo);
+
+    winner.bankroll += 2000;
+    winner.gamesWon++;
+    winner.gamesPlayed++;
+    loser.bankroll = Math.max(0, loser.bankroll - 2000);
+    loser.gamesPlayed++;
+
+    io.to(roomCode).emit("bankrollUpdated", {
+      [winnerPseudo]: winner.bankroll,
+      [loserPseudo]:  loser.bankroll,
+    });
+
+    console.log(`Résultat salle ${roomCode} : ${winnerPseudo} +2000 / ${loserPseudo} -2000`);
+  });
+
+  // Relais mains début de manche
   socket.on("startRound", ({ roomCode, hands, roundStarter }) => {
     socket.to(roomCode).emit("roundStarted", { hands, roundStarter });
   });
 
-  // Relayer le coup joué à l'adversaire seulement
+  // Relais coup joué
   socket.on("playCard", ({ roomCode, card, playerIdx }) => {
     socket.to(roomCode).emit("cardPlayed", { card, playerIdx });
   });
@@ -55,7 +127,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Sert le frontend buildé (dist/) si disponible
+// ── Frontend statique ─────────────────────────────────────────────────────
 const distPath = path.join(__dirname, "../dist");
 app.use(express.static(distPath));
 app.get("*", (req, res) => {

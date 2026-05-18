@@ -139,7 +139,7 @@ function SaveBtn({ onClick, saved }) {
   );
 }
 
-export default function Profile({ onBack, avatarId = 0 }) {
+export default function Profile({ onBack, avatarId = 0, bankroll = 100000 }) {
   const [profile, setProfile] = useState(initProfile);
   const [savedSection, setSavedSection] = useState(null);
   const [closeConfirm, setCloseConfirm] = useState(false);
@@ -382,6 +382,24 @@ export default function Profile({ onBack, avatarId = 0 }) {
                 onChange={v => update("pseudo", v)}
                 placeholder="Votre pseudo de jeu"
               />
+            </div>
+            {/* Bankroll */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ fontSize: "9px", fontWeight: "700", color: "rgba(0,217,255,0.6)", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "6px" }}>
+                Bankroll
+              </div>
+              <div style={{
+                padding: "12px 16px",
+                borderRadius: "8px",
+                background: "rgba(245,158,11,0.06)",
+                border: "1px solid rgba(245,158,11,0.25)",
+                display: "flex", alignItems: "baseline", gap: "6px",
+              }}>
+                <span style={{ fontSize: "22px", fontWeight: "900", color: "#F59E0B" }}>
+                  {bankroll.toLocaleString("fr-FR")}
+                </span>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "rgba(245,158,11,0.6)" }}>FCFA</span>
+              </div>
             </div>
             <Field
               label="Date de création du compte"

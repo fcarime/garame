@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AVATARS, getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 
-export default function Home({ onStartGame, onProfile }) {
+export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo = "" }) {
   const [selectedAvatars, setSelectedAvatars] = useState([DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2]);
   const modes = [
     { key: "ia",          icon: "🤖", label: "CONTRE L'IA", sub: "Solo",       color: "#00D9FF", glow: "rgba(0,217,255,0.35)",   border: "rgba(0,217,255,0.5)"   },
@@ -25,24 +25,39 @@ export default function Home({ onStartGame, onProfile }) {
       boxSizing: "border-box",
     }}>
 
-      {/* Bouton Mon Compte */}
+      {/* Bouton Mon Compte + bankroll */}
       {onProfile && (
-        <button onClick={onProfile} style={{
+        <div style={{
           position: "fixed", top: "12px", right: "12px", zIndex: 20,
-          padding: "7px 14px",
-          borderRadius: "20px",
-          border: "1px solid rgba(0,217,255,0.3)",
-          background: "rgba(15,23,42,0.85)",
-          color: "rgba(0,217,255,0.8)",
-          fontSize: "10px", fontWeight: "700",
-          letterSpacing: "1.5px", textTransform: "uppercase",
-          cursor: "pointer",
-          backdropFilter: "blur(12px)",
-          display: "flex", alignItems: "center", gap: "5px",
-          touchAction: "manipulation",
+          display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px",
         }}>
-          <span>👤</span> MON COMPTE
-        </button>
+          <button onClick={onProfile} style={{
+            padding: "7px 14px",
+            borderRadius: "20px",
+            border: "1px solid rgba(0,217,255,0.3)",
+            background: "rgba(15,23,42,0.85)",
+            color: "rgba(0,217,255,0.8)",
+            fontSize: "10px", fontWeight: "700",
+            letterSpacing: "1.5px", textTransform: "uppercase",
+            cursor: "pointer",
+            backdropFilter: "blur(12px)",
+            display: "flex", alignItems: "center", gap: "5px",
+            touchAction: "manipulation",
+          }}>
+            <span>👤</span> {pseudo || "MON COMPTE"}
+          </button>
+          <div style={{
+            fontSize: "9px", fontWeight: "700", color: "#F59E0B",
+            background: "rgba(15,23,42,0.85)",
+            border: "1px solid rgba(245,158,11,0.25)",
+            borderRadius: "12px",
+            padding: "3px 10px",
+            backdropFilter: "blur(12px)",
+            letterSpacing: "0.5px",
+          }}>
+            {bankroll.toLocaleString("fr-FR")} FCFA
+          </div>
+        </div>
       )}
 
       {/* Background grid */}
