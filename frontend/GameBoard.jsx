@@ -1,0 +1,807 @@
+import { useState, useEffect } from "react";
+import Hand from "./Hand";
+import Card from "./Card";
+import PokerTable from "./PokerTable";
+import CardBack from "./CardBack";
+import PlayerWaitScreen from "./PlayerWaitScreen";
+import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
+import { getBackgroundCss, BG_ACCENT } from "./backgrounds";
+import {
+  createDeck,
+  dealCards,
+  canPlayCard,
+  getWinner,
+  getAIMove,
+  isHandEmpty,
+  sortHand,
+  checkSpecialWin,
+} from "./gameLogic";
+
+const INITIAL_POT = 1000;
+
+export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2] }) {
+  const [bgIndex] = useState(() => Math.floor(Math.random() * 12));
+  const accent = BG_ACCENT[bgIndex];
+  const [gameState, setGameState] = useState("setup");
+  const [players] = useState([
+    { id: 0, name: "Joueur 1", isAI: gameMode === "ia" },
+    { id: 1, name: gameMode === "ia" ? "IA" : "Joueur 2", isAI: gameMode === "ia" }
+  ]);
+  const [hands, setHands] = useState([[], []]);
+  const [pot, setPot] = useState(0);
+  const [scores, setScores] = useState([0, 0]);
+  const [currentRound, setCurrentRound] = useState(1);
+  const [trick, setTrick] = useState([]);
+  const [leadSuit, setLeadSuit] = useState(null);
+  const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [roundStarter, setRoundStarter] = useState(0);
+  const [message, setMessage] = useState("");
+  const [gameOver, setGameOver] = useState(false);
+  const [validCards, setValidCards] = useState([]);
+  const [waitingForPlayer, setWaitingForPlayer] = useState(null);
+  const [pendingOpponentCard, setPendingOpponentCard] = useState(null);
+  const [specialWinInfo, setSpecialWinInfo] = useState(null);
+
+  const startRound = () => {
+    if (gameMode === "online" && myIndex !== 0) return;
+
+    const deck = createDeck();
+    const { hands: dealt } = dealCards(deck, 2, 5);
+    const newHands = [sortHand(dealt[0]), sortHand(dealt[1])];
+    const newPot = INITIAL_POT * 2;
+
+    setHands(newHands);
+    setPot(newPot);
+    setTrick([]);
+    setLeadSuit(null);
+    setCurrentPlayer(roundStarter);
+    setGameOver(false);
+    setWaitingForPlayer(gameMode === "multiplayer" ? roundStarter : null);
+
+    const sw = checkSpecialWin(newHands, roundStarter);
+    if (sw) {
+      setGameState("specialWin");
+      setSpecialWinInfo({ ...sw, hands: newHands, potValue: newPot });
+      setMessage(`${players[sw.player].name} a une main spéciale!`);
+      return;
+    }
+
+    setGameState("playing");
+    setMessage(`${players[roundStarter].name} commence`);
+
+    if (gameMode === "online" && socket) {
+      socket.emit("startRound", { roomCode, hands: newHands, roundStarter });
+    }
+  };
+
+  useEffect(() => {
+    if (gameState === "setup") {
+      startRound();
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    if (gameState === "nextRound") {
+      startRound();
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    if (gameState === "playing" && trick.length < 2) {
+      let displayPlayer;
+      if (gameMode === "online") {
+        // En online, surligner les cartes seulement quand c'est mon tour
+        if (currentPlayer !== myIndex) { setValidCards([]); return; }
+        displayPlayer = myIndex;
+      } else if (gameMode === "multiplayer") {
+        displayPlayer = currentPlayer;
+      } else {
+        displayPlayer = 0;
+      }
+      const playableCards = hands[displayPlayer].filter(card =>
+        canPlayCard(card, leadSuit, hands[displayPlayer])
+      );
+      setValidCards(playableCards);
+    }
+  }, [currentPlayer, leadSuit, gameState, hands, trick, gameMode, myIndex]);
+
+  // Écoute des événements socket en mode online
+  useEffect(() => {
+    if (gameMode !== "online" || !socket) return;
+
+    socket.on("roundStarted", ({ hands: newHands, roundStarter: rs }) => {
+      setHands([sortHand(newHands[0]), sortHand(newHands[1])]);
+      setPot(INITIAL_POT * 2);
+      setTrick([]);
+      setLeadSuit(null);
+      setCurrentPlayer(rs);
+      setRoundStarter(rs);
+      setGameState("playing");
+      setMessage(`${players[rs].name} commence`);
+      setGameOver(false);
+    });
+
+    socket.on("cardPlayed", ({ card, playerIdx }) => {
+      setPendingOpponentCard({ card, playerIdx });
+    });
+
+    socket.on("opponentDisconnected", () => {
+      setMessage("L'adversaire s'est déconnecté!");
+      setGameOver(true);
+    });
+
+    return () => {
+      socket.off("roundStarted");
+      socket.off("cardPlayed");
+      socket.off("opponentDisconnected");
+    };
+  }, [gameMode, socket]);
+
+  // Traitement du coup reçu de l'adversaire (via pendingOpponentCard)
+  useEffect(() => {
+    if (!pendingOpponentCard || gameState !== "playing") return;
+    const { card, playerIdx } = pendingOpponentCard;
+    const cardIndex = hands[playerIdx].findIndex(
+      c => c.suit === card.suit && c.value === card.value
+    );
+    setPendingOpponentCard(null);
+    if (cardIndex !== -1) playCardLogic(playerIdx, cardIndex);
+  }, [pendingOpponentCard, gameState]);
+
+  // Auto-dismiss spécial win après 4s (ou clic)
+  useEffect(() => {
+    if (gameState !== "specialWin" || !specialWinInfo) return;
+    const sw = specialWinInfo;
+    const timer = setTimeout(() => {
+      setSpecialWinInfo(null);
+      endRound(sw.player);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [gameState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (gameState === "playing" && currentPlayer === 1 && trick.length < 2 && gameMode === "ia") {
+      const timer = setTimeout(() => {
+        const playable = hands[1].filter(card =>
+          canPlayCard(card, leadSuit, hands[1])
+        );
+        if (playable.length > 0) {
+          const aiCard = getAIMove(hands[1], leadSuit, trick);
+          playCardLogic(1, hands[1].indexOf(aiCard));
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentPlayer, gameState, hands, trick, leadSuit, gameMode]);
+
+  const playCardLogic = (playerIdx, cardIndex) => {
+    const card = hands[playerIdx][cardIndex];
+
+    if (!canPlayCard(card, leadSuit, hands[playerIdx])) {
+      setMessage("Coup invalide! Suivez la couleur.");
+      return;
+    }
+
+    const newHands = [...hands];
+    newHands[playerIdx] = newHands[playerIdx].filter((_, i) => i !== cardIndex);
+    setHands(newHands);
+
+    const newTrick = [...trick, { player: playerIdx, card }];
+    setTrick(newTrick);
+
+    if (newTrick.length === 1) {
+      setLeadSuit(card.suit);
+      setMessage(`${players[playerIdx].name} joue ${card.value}${card.suit}`);
+      setCurrentPlayer(1 - playerIdx);
+
+      if (gameMode === "multiplayer") {
+        setWaitingForPlayer(1 - playerIdx);
+      }
+    } else {
+      const demandedSuit = newTrick[0].card.suit;
+      const winner = getWinner(newTrick, demandedSuit);
+      setMessage(`${players[winner.player].name} gagne le pli!`);
+      setGameState("trickEnd");
+
+      setTimeout(() => {
+        if (isHandEmpty(newHands[0]) && isHandEmpty(newHands[1])) {
+          endRound(winner.player, winner.card);
+        } else {
+          setTrick([]);
+          setLeadSuit(null);
+          setCurrentPlayer(winner.player);
+          setGameState("playing");
+
+          if (gameMode === "multiplayer") {
+            setWaitingForPlayer(winner.player);
+          }
+        }
+      }, 2000);
+    }
+  };
+
+  const playCard = (index) => {
+    if (gameState !== "playing") return;
+    if (gameMode === "ia" && currentPlayer !== 0) return;
+    if (gameMode === "multiplayer" && waitingForPlayer !== null) return;
+    if (gameMode === "online" && currentPlayer !== myIndex) return;
+
+    if (gameMode === "online" && socket) {
+      const card = hands[myIndex][index];
+      socket.emit("playCard", { roomCode, card, playerIdx: myIndex });
+    }
+
+    playCardLogic(currentPlayer, index);
+  };
+
+  const endRound = (winner, lastCard = null) => {
+    const hasBonusWin = lastCard?.value === "3";
+
+    setGameState("roundEnd");
+
+    const newScores = [...scores];
+    newScores[winner] += 1; // +1 manche gagnée
+    if (hasBonusWin) newScores[winner] += 1; // manche bonus automatique
+    setScores(newScores);
+
+    if (hasBonusWin) {
+      setMessage(`${players[winner].name} gagne + manche bonus (dernier 3)!`);
+    } else {
+      setMessage(`${players[winner].name} gagne la manche!`);
+    }
+
+    if (newScores[winner] >= 3) {
+      setGameOver(true);
+      setMessage(`${players[winner].name} remporte la partie et les 2 000 FCFA!`);
+    } else {
+      setTimeout(() => {
+        setCurrentRound(prev => prev + (hasBonusWin ? 2 : 1));
+        if (!hasBonusWin) setRoundStarter(prev => 1 - prev);
+        setGameState("nextRound");
+      }, hasBonusWin ? 4500 : 3000);
+    }
+  };
+
+  const restartGame = () => {
+    setScores([0, 0]);
+    setCurrentRound(1);
+    setRoundStarter(0);
+    setGameState("setup");
+    setMessage("");
+    setWaitingForPlayer(null);
+  };
+
+  if (gameState === "setup" && hands[0].length === 0) {
+    return null;
+  }
+
+  const myDisplayName = gameMode === "multiplayer"
+    ? players[currentPlayer].name
+    : gameMode === "online"
+      ? `Joueur ${myIndex + 1}`
+      : "Vous";
+
+  const myScore = gameMode === "multiplayer"
+    ? scores[currentPlayer]
+    : gameMode === "online"
+      ? scores[myIndex]
+      : scores[0];
+
+  const myTurn = gameMode === "multiplayer"
+    ? waitingForPlayer === null
+    : gameMode === "online"
+      ? currentPlayer === myIndex
+      : currentPlayer === 0;
+
+  const myCards = gameMode === "multiplayer" ? hands[currentPlayer]
+    : gameMode === "online" ? hands[myIndex]
+    : hands[0];
+
+  const myHandLabel = gameMode === "multiplayer"
+    ? players[currentPlayer].name.toUpperCase()
+    : gameMode === "online" ? `J${myIndex + 1}`
+    : "VOUS";
+
+  const myAvatarId = gameMode === "multiplayer"
+    ? playerAvatars[currentPlayer]
+    : playerAvatars[myIndex];
+
+  const opponentIndex = gameMode === "online" ? 1 - myIndex : 1;
+
+  const opponentAvatarId = players[opponentIndex].isAI
+    ? DEFAULT_AVATARS.ai
+    : playerAvatars[opponentIndex];
+
+  return (
+    <div style={{
+      width: "100%",
+      height: "100vh",
+      background: "#060a18",
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+      position: "relative",
+    }}>
+      {/* Fond paysage africain — change à chaque partie */}
+      <div style={{
+        position: "absolute",
+        top: "50%", left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(95vw, 560px)",
+        height: "min(95vw, 560px)",
+        ...getBackgroundCss(bgIndex),
+        opacity: 0.18,
+        zIndex: 0,
+        pointerEvents: "none",
+        mixBlendMode: "screen",
+      }} />
+
+      {/* Halo radial teinté par l'accent du fond */}
+      <div style={{
+        position: "absolute",
+        top: "35%", left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "70vw", height: "70vw",
+        background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`,
+        pointerEvents: "none", zIndex: 0,
+      }} />
+
+      {/* Wait screen */}
+      {gameMode === "multiplayer" && waitingForPlayer !== null && (
+        <PlayerWaitScreen
+          playerNumber={currentPlayer}
+          message="Cliquez n'importe où pour voir vos cartes"
+          onClick={() => setWaitingForPlayer(null)}
+        />
+      )}
+
+      {/* ── Header compact ── */}
+      <div style={{
+        position: "relative", zIndex: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "8px 14px 6px",
+        flexShrink: 0,
+      }}>
+        <button
+          onClick={onBackToHome}
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "8px",
+            color: "rgba(255,255,255,0.4)",
+            fontSize: "10px", fontWeight: "700",
+            padding: "4px 10px", letterSpacing: "1px", cursor: "pointer",
+          }}
+        >
+          ← MENU
+        </button>
+
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            fontSize: "16px", fontWeight: "900", letterSpacing: "5px",
+            color: accent,
+            textShadow: `0 0 16px ${accent}99`,
+          }}>
+            GARAME
+          </div>
+          <div style={{ fontSize: "8px", color: "rgba(255,255,255,0.25)", letterSpacing: "2px", marginTop: "1px" }}>
+            MANCHE {currentRound} · {gameMode === "ia" ? "VS IA" : gameMode === "online" ? `EN LIGNE J${myIndex + 1}` : "LOCAL"}
+          </div>
+        </div>
+
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: "8px", color: "rgba(255,255,255,0.25)", letterSpacing: "1px" }}>MANCHES</div>
+          <div style={{ fontSize: "12px", fontWeight: "900", color: accent }}>
+            {scores[0]}/3 <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span> {scores[1]}/3
+          </div>
+        </div>
+      </div>
+
+
+      {/* ── ADVERSAIRE (au-dessus du plateau, cartes chevauchent le bord haut) ── */}
+      {(() => {
+        const opponentActive = currentPlayer === opponentIndex;
+        return (
+          <div style={{
+            position: "relative", zIndex: 10,
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "6px",
+            padding: "0 12px",
+            marginBottom: "clamp(-20px, -4.5vw, -32px)",
+          }}>
+            {/* Grand portrait de fond — centré sur le bord haut du plateau */}
+            <div style={{
+              position: "absolute",
+              bottom: "clamp(-70px, -18vw, -138px)", left: "50%",
+              transform: "translateX(-50%)",
+              ...getAvatarStyle(opponentAvatarId, 160),
+              width: "min(38vw, 160px)",
+              height: "min(38vw, 160px)",
+              opacity: opponentActive ? 0.65 : 0.38,
+              zIndex: -1,
+              pointerEvents: "none",
+              filter: opponentActive
+                ? "drop-shadow(0 0 18px rgba(0,217,255,0.55))"
+                : "drop-shadow(0 0 8px rgba(0,0,0,0.8))",
+              transition: "opacity 0.4s ease, filter 0.4s ease",
+            }} />
+
+            {/* Info bar adversaire */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "rgba(4,18,46,0.85)",
+              border: opponentActive ? "1px solid rgba(0,217,255,0.7)" : "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "20px",
+              padding: "5px 12px 5px 7px",
+              boxShadow: opponentActive ? "0 0 14px rgba(0,217,255,0.4)" : "none",
+              backdropFilter: "blur(6px)",
+              transition: "all 0.3s ease",
+            }}>
+              <div style={{
+                ...getAvatarStyle(opponentAvatarId, 32),
+                width: "clamp(24px, 6.5vw, 32px)",
+                height: "clamp(24px, 6.5vw, 32px)",
+                border: opponentActive ? "2px solid #00D9FF" : "2px solid rgba(255,255,255,0.2)",
+                boxShadow: opponentActive ? "0 0 10px rgba(0,217,255,0.5)" : "none",
+              }} />
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>
+                  {players[opponentIndex].name}
+                </div>
+                <div style={{ fontSize: "12px", fontWeight: "800", color: "#4ade80" }}>
+                  {scores[opponentIndex]}<span style={{ fontSize: "8px", color: "rgba(255,255,255,0.4)", marginLeft: "2px" }}>/3</span>
+                </div>
+              </div>
+              {opponentActive && (
+                <div style={{
+                  width: "7px", height: "7px", borderRadius: "50%",
+                  background: "#00D9FF", boxShadow: "0 0 8px #00D9FF",
+                  marginLeft: "4px", flexShrink: 0,
+                }} />
+              )}
+            </div>
+
+            {/* Dos de cartes en éventail — chevauchent le bord haut du plateau */}
+            <div style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+              gap: "4px",
+              padding: "4px 0 0",
+              minHeight: "68px",
+            }}>
+              {hands[opponentIndex].length === 0 ? (
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.2)", alignSelf: "center" }}>—</div>
+              ) : (() => {
+                const total = hands[opponentIndex].length;
+                const mid = (total - 1) / 2;
+                return hands[opponentIndex].map((_, i) => {
+                  const rotation = (i - mid) * 2.5;
+                  const lift = Math.pow(i - mid, 2) * 1.5;
+                  return (
+                    <div key={i} style={{
+                      transform: `rotate(${rotation}deg) translateY(${lift}px)`,
+                      transformOrigin: "50% -80%",
+                      zIndex: i + 1,
+                    }}>
+                      <CardBack small />
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── TABLE (zone principale) ── */}
+      <div style={{ flex: 1, position: "relative", zIndex: 1, minHeight: 0 }}>
+        <PokerTable
+          trick={trick}
+          leadSuit={leadSuit}
+          pot={pot}
+          message={message}
+          myTurn={myTurn}
+          gameOver={gameOver}
+        />
+      </div>
+
+      {/* ── ZONE JOUEUR (bas de l'écran, cartes chevauchent le bord bas) ── */}
+      <div style={{
+        position: "relative", zIndex: 10,
+        flexShrink: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "8px",
+        padding: "0 12px 14px",
+        marginTop: "clamp(-20px, -4.5vw, -32px)",
+      }}>
+        {/* Grand portrait de fond — centré sur le bord bas du plateau */}
+        <div style={{
+          position: "absolute",
+          top: "clamp(-50px, -13vw, -85px)", left: "50%",
+          transform: "translateX(-50%)",
+          ...getAvatarStyle(myAvatarId, 175),
+          width: "min(42vw, 175px)",
+          height: "min(42vw, 175px)",
+          opacity: myTurn ? 0.65 : 0.38,
+          zIndex: -1,
+          pointerEvents: "none",
+          filter: myTurn
+            ? "drop-shadow(0 0 18px rgba(0,217,255,0.55))"
+            : "drop-shadow(0 0 8px rgba(0,0,0,0.8))",
+          transition: "opacity 0.4s ease, filter 0.4s ease",
+        }} />
+
+        {/* Cartes en premier — chevauchent le bord bas du plateau */}
+        <Hand
+          cards={myCards}
+          onPlay={playCard}
+          validCards={validCards}
+          playerName={myHandLabel}
+        />
+
+        {/* Barre infos joueur */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          background: "rgba(4,18,46,0.85)",
+          border: myTurn ? "1px solid rgba(0,217,255,0.6)" : "1px solid rgba(255,255,255,0.1)",
+          borderRadius: "22px",
+          padding: "5px 14px 5px 8px",
+          backdropFilter: "blur(10px)",
+          boxShadow: myTurn ? "0 0 16px rgba(0,217,255,0.3)" : "none",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            ...getAvatarStyle(myAvatarId, 34),
+            width: "clamp(26px, 7vw, 34px)",
+            height: "clamp(26px, 7vw, 34px)",
+            border: myTurn ? "2px solid #00D9FF" : "2px solid rgba(255,255,255,0.15)",
+            boxShadow: myTurn ? "0 0 10px rgba(0,217,255,0.5)" : "none",
+          }} />
+          <div>
+            <div style={{ fontSize: "11px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>
+              {myDisplayName}
+            </div>
+            <div style={{ fontSize: "12px", fontWeight: "800", color: "#4ade80" }}>
+              {myScore}<span style={{ fontSize: "8px", color: "rgba(255,255,255,0.35)", marginLeft: "2px" }}>/3</span>
+            </div>
+          </div>
+          {myTurn && (
+            <div style={{
+              width: "7px", height: "7px", borderRadius: "50%",
+              background: "#00D9FF", boxShadow: "0 0 8px #00D9FF",
+              marginLeft: "4px", flexShrink: 0,
+            }} />
+          )}
+        </div>
+      </div>
+
+      {/* ── Special Win Overlay ── */}
+      {specialWinInfo && (
+        <div
+          onClick={() => {
+            const sw = specialWinInfo;
+            setSpecialWinInfo(null);
+            endRound(sw.player);
+          }}
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(9,14,27,0.95)",
+            backdropFilter: "blur(10px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1200, cursor: "pointer",
+            animation: "fadeIn 0.3s ease",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#1E293B",
+              padding: "28px 36px",
+              borderRadius: "20px",
+              textAlign: "center",
+              maxWidth: "400px",
+              width: "90vw",
+              border: `1px solid ${specialWinInfo.reason === "triple7" ? "rgba(251,191,36,0.55)" : "rgba(0,217,255,0.45)"}`,
+              boxShadow: `0 0 60px ${specialWinInfo.reason === "triple7" ? "rgba(251,191,36,0.18)" : "rgba(0,217,255,0.12)"}, 0 40px 80px rgba(0,0,0,0.6)`,
+              animation: "slideUp 0.35s ease",
+            }}
+          >
+            {/* Badge raison */}
+            <div style={{
+              display: "inline-block",
+              fontSize: "11px", fontWeight: "800", letterSpacing: "3px",
+              textTransform: "uppercase",
+              color: specialWinInfo.reason === "triple7" ? "#FCD34D" : "#00D9FF",
+              background: specialWinInfo.reason === "triple7" ? "rgba(251,191,36,0.12)" : "rgba(0,217,255,0.1)",
+              border: `1px solid ${specialWinInfo.reason === "triple7" ? "rgba(251,191,36,0.3)" : "rgba(0,217,255,0.3)"}`,
+              borderRadius: "20px", padding: "4px 16px", marginBottom: "16px",
+            }}>
+              {specialWinInfo.reason === "triple7" ? "⚡ TRIPLE SEPT" : `🃏 MAIN BASSE · ${specialWinInfo.sum} pts`}
+            </div>
+
+            {/* Nom du gagnant */}
+            <div style={{ fontSize: "22px", fontWeight: "900", color: "#fff", marginBottom: "4px" }}>
+              {players[specialWinInfo.player].name}
+            </div>
+            <div style={{ fontSize: "11px", color: "#64748B", fontWeight: "700", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "20px" }}>
+              GAGNE LA MANCHE
+            </div>
+
+            {/* Cartes révélées */}
+            <div style={{
+              display: "flex", justifyContent: "center", gap: "8px",
+              marginBottom: "20px", padding: "14px 10px",
+              background: "rgba(15,23,42,0.6)", borderRadius: "12px",
+            }}>
+              {specialWinInfo.hands[specialWinInfo.player].map((card, i) => {
+                const isKey = specialWinInfo.reason === "triple7" && card.value === "7";
+                return (
+                  <div key={i} style={{
+                    transform: isKey ? "translateY(-12px) scale(1.08)" : "none",
+                    boxShadow: isKey ? "0 0 22px rgba(251,191,36,0.75)" : "none",
+                    outline: isKey ? "2px solid #FCD34D" : "none",
+                    outlineOffset: "3px",
+                    borderRadius: "8px",
+                    transition: "transform 0.3s ease",
+                  }}>
+                    <Card value={card.value} suit={card.suit} />
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.22)", letterSpacing: "1px" }}>
+              Appuyez pour continuer · auto dans 4s
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Game Over Modal ── */}
+      {gameOver && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(9,14,27,0.92)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          animation: "fadeIn 0.3s ease",
+        }}>
+          <div style={{
+            background: "#1E293B",
+            padding: "40px 48px",
+            borderRadius: "20px",
+            textAlign: "center",
+            maxWidth: "440px",
+            width: "90vw",
+            border: "1px solid rgba(0,217,255,0.3)",
+            boxShadow: "0 0 0 1px rgba(0,217,255,0.1), 0 0 60px rgba(0,217,255,0.15), 0 40px 80px rgba(0,0,0,0.6)",
+            animation: "slideUp 0.35s ease",
+          }}>
+            <div style={{ fontSize: "13px", fontWeight: "700", color: "#64748B", letterSpacing: "3px", marginBottom: "16px" }}>
+              PARTIE TERMINÉE
+            </div>
+
+            <div style={{
+              fontSize: "40px", fontWeight: "900", letterSpacing: "-1px", lineHeight: 1, marginBottom: "8px",
+              color: scores[myIndex] >= scores[opponentIndex] ? "#00D9FF" : "#EF4444",
+              textShadow: `0 0 30px ${scores[myIndex] >= scores[opponentIndex] ? "rgba(0,217,255,0.5)" : "rgba(239,68,68,0.5)"}`,
+            }}>
+              {scores[myIndex] >= scores[opponentIndex] ? "VICTOIRE" : "DÉFAITE"}
+            </div>
+
+            <div style={{
+              fontSize: "13px", color: "#94A3B8", marginBottom: "8px", fontStyle: "italic",
+            }}>
+              {scores[myIndex] > scores[opponentIndex] ? "Vous remportez" : "L'adversaire remporte"}
+            </div>
+
+            <div style={{
+              fontSize: "28px", fontWeight: "900", color: "#F59E0B",
+              textShadow: "0 0 20px rgba(245,158,11,0.5)",
+              marginBottom: "24px",
+            }}>
+              2 000 FCFA
+            </div>
+
+            <div style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "24px",
+              marginBottom: "32px",
+              padding: "16px 24px",
+              background: "rgba(15,23,42,0.6)",
+              borderRadius: "12px",
+              border: "1px solid rgba(100,116,139,0.2)",
+            }}>
+              {[0, 1].map(i => (
+                <div key={i} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "10px", color: "#64748B", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>
+                    {players[i].name}
+                  </div>
+                  <div style={{ fontSize: "28px", fontWeight: "900", color: i === 0 ? "#00D9FF" : "#F59E0B" }}>
+                    {scores[i]}
+                  </div>
+                  <div style={{ fontSize: "9px", color: "#334155" }}>MANCHE{scores[i] > 1 ? "S" : ""}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+              <button
+                onClick={restartGame}
+                style={{
+                  padding: "13px 28px",
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  background: "#00D9FF",
+                  color: "#0F172A",
+                  border: "none",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  boxShadow: "0 0 20px rgba(0,217,255,0.4)",
+                }}
+              >
+                REJOUER
+              </button>
+              <button
+                onClick={onBackToHome}
+                style={{
+                  padding: "13px 28px",
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  background: "transparent",
+                  color: "#64748B",
+                  border: "1px solid rgba(100,116,139,0.4)",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                }}
+              >
+                ACCUEIL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0);    }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: translateX(-50%) scale(1.2);
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
