@@ -8,18 +8,16 @@ export default function Card({ value, suit, onClick, disabled = false }) {
       style={{
         width: "clamp(44px, 11vw, 62px)",
         height: "clamp(62px, 15.5vw, 90px)",
-        background: disabled ? "#1a2436" : "#FFFEF7",
-        border: disabled
-          ? "1px solid rgba(100,116,139,0.3)"
-          : `1px solid ${isRed ? "rgba(220,38,38,0.3)" : "rgba(30,41,59,0.3)"}`,
+        background: "#FFFEF7",
+        border: `1px solid ${isRed ? "rgba(220,38,38,0.3)" : "rgba(30,41,59,0.3)"}`,
         borderRadius: "clamp(5px, 1.5vw, 8px)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         padding: "clamp(2px, 0.6vw, 4px)",
         cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.8 : 1,
-        boxShadow: disabled ? "none" : "0 4px 12px rgba(0,0,0,0.4)",
+        opacity: disabled ? 0.55 : 1,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
         userSelect: "none",
         position: "relative",
         flexShrink: 0,
@@ -55,10 +53,10 @@ export default function Card({ value, suit, onClick, disabled = false }) {
     >
       {/* Top-left corner */}
       <div style={{ lineHeight: 1, textAlign: "left" }}>
-        <div style={{ fontSize: "clamp(10px, 2.8vw, 14px)", fontWeight: "900", color: disabled ? "#334155" : suitColor, lineHeight: 1 }}>
+        <div style={{ fontSize: "clamp(10px, 2.8vw, 14px)", fontWeight: "900", color: suitColor, lineHeight: 1 }}>
           {value}
         </div>
-        <div style={{ fontSize: "clamp(8px, 2.2vw, 11px)", color: disabled ? "#334155" : suitColor, lineHeight: 1, marginTop: "1px" }}>
+        <div style={{ fontSize: "clamp(8px, 2.2vw, 11px)", color: suitColor, lineHeight: 1, marginTop: "1px" }}>
           {suit}
         </div>
       </div>
@@ -70,7 +68,7 @@ export default function Card({ value, suit, onClick, disabled = false }) {
         alignItems: "center",
         justifyContent: "center",
         fontSize: "clamp(22px, 5.5vw, 34px)",
-        color: disabled ? "#334155" : suitColor,
+        color: suitColor,
         lineHeight: 1,
       }}>
         {suit}
@@ -78,10 +76,10 @@ export default function Card({ value, suit, onClick, disabled = false }) {
 
       {/* Bottom-right corner (rotated) */}
       <div style={{ lineHeight: 1, textAlign: "right", transform: "rotate(180deg)" }}>
-        <div style={{ fontSize: "clamp(10px, 2.8vw, 14px)", fontWeight: "900", color: disabled ? "#334155" : suitColor, lineHeight: 1 }}>
+        <div style={{ fontSize: "clamp(10px, 2.8vw, 14px)", fontWeight: "900", color: suitColor, lineHeight: 1 }}>
           {value}
         </div>
-        <div style={{ fontSize: "clamp(8px, 2.2vw, 11px)", color: disabled ? "#334155" : suitColor, lineHeight: 1, marginTop: "1px" }}>
+        <div style={{ fontSize: "clamp(8px, 2.2vw, 11px)", color: suitColor, lineHeight: 1, marginTop: "1px" }}>
           {suit}
         </div>
       </div>
