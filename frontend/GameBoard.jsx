@@ -37,6 +37,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     ];
   });
   const [myBankroll, setMyBankroll] = useState(initialBankroll);
+  const [playedCards, setPlayedCards] = useState([]);
   const [hands, setHands] = useState([[], []]);
   const [pot, setPot] = useState(0);
   const [scores, setScores] = useState([0, 0]);
@@ -64,6 +65,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     setPot(newPot);
     setTrick([]);
     setLeadSuit(null);
+    setPlayedCards([]);
     setCurrentPlayer(roundStarter);
     setGameOver(false);
     setWaitingForPlayer(gameMode === "multiplayer" ? roundStarter : null);
@@ -124,6 +126,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setPot(INITIAL_POT * 2);
       setTrick([]);
       setLeadSuit(null);
+      setPlayedCards([]);
       setCurrentPlayer(rs);
       setRoundStarter(rs);
       setGameState("playing");
@@ -201,6 +204,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     const newHands = [...hands];
     newHands[playerIdx] = newHands[playerIdx].filter((_, i) => i !== cardIndex);
     setHands(newHands);
+
+    setPlayedCards(prev => [...prev, { player: playerIdx, card }]);
 
     const newTrick = [...trick, { player: playerIdx, card }];
     setTrick(newTrick);
@@ -528,6 +533,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       <div style={{ flex: 1, position: "relative", zIndex: 1, minHeight: 0 }}>
         <PokerTable
           trick={trick}
+          playedCards={playedCards}
           leadSuit={leadSuit}
           pot={pot}
           message={message}

@@ -1,6 +1,19 @@
 import Card from "./Card";
 
-export default function PokerTable({ trick, leadSuit, pot, message, myTurn, gameOver }) {
+const PILE_OFFSETS = [
+  { rot: -4, dx:  0, dy:  0 },
+  { rot:  3, dx: -5, dy:  2 },
+  { rot: -6, dx:  4, dy: -3 },
+  { rot:  5, dx: -3, dy:  4 },
+  { rot: -2, dx:  6, dy: -1 },
+  { rot:  7, dx: -4, dy:  3 },
+  { rot: -5, dx:  2, dy: -4 },
+  { rot:  4, dx: -6, dy:  2 },
+  { rot: -3, dx:  5, dy: -2 },
+  { rot:  6, dx: -2, dy:  3 },
+];
+
+export default function PokerTable({ trick, playedCards = [], leadSuit, pot, message, myTurn, gameOver }) {
   return (
     <div style={{
       width: "100%",
@@ -111,14 +124,36 @@ export default function PokerTable({ trick, leadSuit, pot, message, myTurn, game
             </span>
           </div>
 
-          {/* Cartes du pli */}
-          {trick.length > 0 ? (
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              {trick.map((p, i) => (
-                <div key={i} style={{ animation: `drop .3s ease ${i * .12}s both` }}>
-                  <Card value={p.card.value} suit={p.card.suit} />
-                </div>
-              ))}
+          {/* Pile de cartes jouées durant la manche */}
+          {playedCards.length > 0 ? (
+            <div style={{
+              position: "relative",
+              width: "clamp(52px, 13vw, 72px)",
+              height: "clamp(74px, 18.5vw, 104px)",
+              flexShrink: 0,
+            }}>
+              {playedCards.map((p, i) => {
+                const o = PILE_OFFSETS[i % PILE_OFFSETS.length];
+                const isCurrentTrick = i >= playedCards.length - trick.length && trick.length > 0;
+                const isNewest = i === playedCards.length - 1;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      top: "50%", left: "50%",
+                      transform: `translate(calc(-50% + ${o.dx}px), calc(-50% + ${o.dy}px)) rotate(${o.rot}deg)`,
+                      zIndex: i + 1,
+                      boxShadow: isCurrentTrick
+                        ? "0 0 10px rgba(0,217,255,0.55), 0 3px 10px rgba(0,0,0,0.6)"
+                        : "0 2px 6px rgba(0,0,0,0.5)",
+                      animation: isNewest ? "drop .25s ease both" : "none",
+                    }}
+                  >
+                    <Card value={p.card.value} suit={p.card.suit} />
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div style={{
@@ -129,14 +164,14 @@ export default function PokerTable({ trick, leadSuit, pot, message, myTurn, game
             </div>
           )}
 
-          {/* Couleur demandée */}
-          {trick.length > 0 && (
+          {/* Couleur demandée — visible dès qu'un pli est en cours */}
+          {leadSuit && trick.length > 0 && (
             <div style={{
               fontSize: "9px", fontWeight: "700", color: "rgba(0,217,255,0.8)",
               letterSpacing: "1.5px", textTransform: "uppercase",
               display: "flex", alignItems: "center", gap: "5px",
             }}>
-              Couleur <span style={{ fontSize: "16px" }}>{trick[0].card.suit}</span>
+              Couleur <span style={{ fontSize: "16px" }}>{leadSuit}</span>
             </div>
           )}
         </div>
