@@ -134,7 +134,7 @@ export default function PokerTable({ trick, playedCards = [], leadSuit, pot, mes
                     flexShrink: 0,
                   }}>
                     {old.map((p, i) => {
-                      const shift = (old.length - 1 - i) * 20;
+                      const shift = (old.length - 1 - i) * 13;
                       return (
                         <div key={i} style={{
                           position: "absolute",
