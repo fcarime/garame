@@ -112,43 +112,55 @@ export default function PokerTable({ trick, playedCards = [], leadSuit, pot, mes
             </span>
           </div>
 
-          {/* Pile de cartes jouées — décalées vers la gauche, dernière au-dessus */}
-          {playedCards.length > 0 ? (
-            <div style={{
-              position: "relative",
-              width: "clamp(52px, 13vw, 72px)",
-              height: "clamp(74px, 18.5vw, 104px)",
-              flexShrink: 0,
-            }}>
-              {playedCards.map((p, i) => {
-                const shift = (playedCards.length - 1 - i) * 13; // 0 = dernière carte (droite), croît pour les plus vieilles (gauche)
-                const isCurrentTrick = i >= playedCards.length - trick.length && trick.length > 0;
-                const isNewest = i === playedCards.length - 1;
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      position: "absolute",
-                      top: "50%", left: "50%",
-                      transform: `translate(calc(-50% - ${shift}px), -50%)`,
-                      zIndex: i + 1,
-                      boxShadow: isCurrentTrick
-                        ? "0 0 10px rgba(0,217,255,0.55), 0 3px 10px rgba(0,0,0,0.6)"
-                        : "0 2px 6px rgba(0,0,0,0.5)",
-                      animation: isNewest ? "drop .25s ease both" : "none",
-                    }}
-                  >
-                    <Card value={p.card.value} suit={p.card.suit} />
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
+          {/* Cartes : pile des plis passés (gauche) + pli en cours côte à côte (droite) */}
+          {playedCards.length === 0 && trick.length === 0 ? (
             <div style={{
               fontSize: "10px", color: "rgba(255,255,255,0.18)",
               fontStyle: "italic", letterSpacing: "1px",
             }}>
               En attente…
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {/* Pile des plis précédents — décalée vers la gauche */}
+              {(() => {
+                const old = playedCards.slice(0, playedCards.length - trick.length);
+                if (old.length === 0) return null;
+                return (
+                  <div style={{
+                    position: "relative",
+                    width: "clamp(52px, 13vw, 72px)",
+                    height: "clamp(74px, 18.5vw, 104px)",
+                    flexShrink: 0,
+                  }}>
+                    {old.map((p, i) => {
+                      const shift = (old.length - 1 - i) * 13;
+                      return (
+                        <div key={i} style={{
+                          position: "absolute",
+                          top: "50%", left: "50%",
+                          transform: `translate(calc(-50% - ${shift}px), -50%)`,
+                          zIndex: i + 1,
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+                        }}>
+                          <Card value={p.card.value} suit={p.card.suit} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Pli en cours — 1 ou 2 cartes clairement visibles */}
+              {trick.map((p, i) => (
+                <div key={i} style={{
+                  flexShrink: 0,
+                  boxShadow: "0 0 10px rgba(0,217,255,0.55), 0 3px 10px rgba(0,0,0,0.6)",
+                  animation: `drop .3s ease ${i * .12}s both`,
+                }}>
+                  <Card value={p.card.value} suit={p.card.suit} />
+                </div>
+              ))}
             </div>
           )}
 
