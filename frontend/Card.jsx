@@ -18,7 +18,7 @@ export default function Card({ value, suit, onClick, disabled = false }) {
         justifyContent: "space-between",
         padding: "clamp(2px, 0.6vw, 4px)",
         cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.62 : 1,
+        opacity: disabled ? 0.8 : 1,
         boxShadow: disabled ? "none" : "0 4px 12px rgba(0,0,0,0.4)",
         userSelect: "none",
         position: "relative",
