@@ -1,17 +1,5 @@
 import Card from "./Card";
 
-const PILE_OFFSETS = [
-  { rot: -4, dx:  0, dy:  0 },
-  { rot:  3, dx: -5, dy:  2 },
-  { rot: -6, dx:  4, dy: -3 },
-  { rot:  5, dx: -3, dy:  4 },
-  { rot: -2, dx:  6, dy: -1 },
-  { rot:  7, dx: -4, dy:  3 },
-  { rot: -5, dx:  2, dy: -4 },
-  { rot:  4, dx: -6, dy:  2 },
-  { rot: -3, dx:  5, dy: -2 },
-  { rot:  6, dx: -2, dy:  3 },
-];
 
 export default function PokerTable({ trick, playedCards = [], leadSuit, pot, message, myTurn, gameOver }) {
   return (
@@ -124,7 +112,7 @@ export default function PokerTable({ trick, playedCards = [], leadSuit, pot, mes
             </span>
           </div>
 
-          {/* Pile de cartes jouées durant la manche */}
+          {/* Pile de cartes jouées — décalées vers la gauche, dernière au-dessus */}
           {playedCards.length > 0 ? (
             <div style={{
               position: "relative",
@@ -133,7 +121,7 @@ export default function PokerTable({ trick, playedCards = [], leadSuit, pot, mes
               flexShrink: 0,
             }}>
               {playedCards.map((p, i) => {
-                const o = PILE_OFFSETS[i % PILE_OFFSETS.length];
+                const shift = (playedCards.length - 1 - i) * 13; // 0 = dernière carte (droite), croît pour les plus vieilles (gauche)
                 const isCurrentTrick = i >= playedCards.length - trick.length && trick.length > 0;
                 const isNewest = i === playedCards.length - 1;
                 return (
@@ -142,7 +130,7 @@ export default function PokerTable({ trick, playedCards = [], leadSuit, pot, mes
                     style={{
                       position: "absolute",
                       top: "50%", left: "50%",
-                      transform: `translate(calc(-50% + ${o.dx}px), calc(-50% + ${o.dy}px)) rotate(${o.rot}deg)`,
+                      transform: `translate(calc(-50% - ${shift}px), -50%)`,
                       zIndex: i + 1,
                       boxShadow: isCurrentTrick
                         ? "0 0 10px rgba(0,217,255,0.55), 0 3px 10px rgba(0,0,0,0.6)"
