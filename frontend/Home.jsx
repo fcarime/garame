@@ -20,14 +20,14 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
       overflowY: "auto",
       overflowX: "hidden",
       position: "relative",
-      padding: "64px 16px 40px",
+      padding: "110px 16px 40px",
       boxSizing: "border-box",
     }}>
 
       {/* Bouton Mon Compte + bankroll */}
       {onProfile && (
         <div style={{
-          position: "fixed", top: "12px", right: "12px", zIndex: 20,
+          position: "fixed", top: "60px", right: "12px", zIndex: 20,
           display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px",
         }}>
           <button onClick={onProfile} style={{

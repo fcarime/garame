@@ -192,8 +192,8 @@ export default function Profile({ onBack, avatarId = 0, bankroll = 100000 }) {
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(0,217,255,0.08)",
         display: "flex", alignItems: "center",
-        padding: "14px 20px",
-        gap: "14px",
+        padding: "60px 16px 12px",
+        gap: "10px",
         boxSizing: "border-box",
       }}>
         <button
@@ -233,17 +233,18 @@ export default function Profile({ onBack, avatarId = 0, bankroll = 100000 }) {
         </div>
 
         {/* Dépôt / Retrait pill — placeholder */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: "6px", flexWrap: "wrap", justifyContent: "flex-end", flexShrink: 1 }}>
           {["DÉPÔT", "RETRAIT"].map(label => (
             <button key={label} style={{
-              padding: "6px 12px",
+              padding: "5px 10px",
               borderRadius: "20px",
               border: "1px solid rgba(245,158,11,0.35)",
               background: "rgba(245,158,11,0.08)",
               color: "rgba(245,158,11,0.55)",
-              fontSize: "9px", fontWeight: "700",
-              letterSpacing: "1.5px", textTransform: "uppercase",
+              fontSize: "8px", fontWeight: "700",
+              letterSpacing: "1px", textTransform: "uppercase",
               cursor: "not-allowed",
+              whiteSpace: "nowrap",
             }}>
               {label}
             </button>
