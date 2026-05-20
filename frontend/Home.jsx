@@ -17,19 +17,31 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
       flexDirection: "column",
       alignItems: "center",
       gap: "24px",
-      overflowY: "auto",
       overflowX: "hidden",
       position: "relative",
-      padding: "110px 16px 40px",
+      padding: "70px 16px 60px",
       boxSizing: "border-box",
     }}>
 
-      {/* Bouton Mon Compte + bankroll */}
+      {/* Bouton Mon Compte + bankroll — dans le flux de la page */}
       {onProfile && (
         <div style={{
-          position: "fixed", top: "60px", right: "12px", zIndex: 20,
-          display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px",
+          position: "relative", zIndex: 1,
+          width: "100%", maxWidth: "720px",
+          display: "flex", justifyContent: "flex-end",
+          alignItems: "center", gap: "8px",
         }}>
+          <div style={{
+            fontSize: "9px", fontWeight: "700", color: "#F59E0B",
+            background: "rgba(15,23,42,0.85)",
+            border: "1px solid rgba(245,158,11,0.25)",
+            borderRadius: "12px",
+            padding: "3px 10px",
+            backdropFilter: "blur(12px)",
+            letterSpacing: "0.5px",
+          }}>
+            {bankroll.toLocaleString("fr-FR")} FCFA
+          </div>
           <button onClick={onProfile} style={{
             padding: "7px 14px",
             borderRadius: "20px",
@@ -45,17 +57,6 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
           }}>
             <span>👤</span> {pseudo || "MON COMPTE"}
           </button>
-          <div style={{
-            fontSize: "9px", fontWeight: "700", color: "#F59E0B",
-            background: "rgba(15,23,42,0.85)",
-            border: "1px solid rgba(245,158,11,0.25)",
-            borderRadius: "12px",
-            padding: "3px 10px",
-            backdropFilter: "blur(12px)",
-            letterSpacing: "0.5px",
-          }}>
-            {bankroll.toLocaleString("fr-FR")} FCFA
-          </div>
         </div>
       )}
 
