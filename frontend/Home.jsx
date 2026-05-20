@@ -4,9 +4,8 @@ import { AVATARS, getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo = "" }) {
   const [selectedAvatars, setSelectedAvatars] = useState([DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2]);
   const modes = [
-    { key: "ia",          icon: "🤖", label: "CONTRE L'IA", sub: "Solo",       color: "#00D9FF", glow: "rgba(0,217,255,0.35)",   border: "rgba(0,217,255,0.5)"   },
-    { key: "multiplayer", icon: "👥", label: "MÊME ÉCRAN",  sub: "Local",      color: "#F59E0B", glow: "rgba(245,158,11,0.35)",  border: "rgba(245,158,11,0.5)"  },
-    { key: "online",      icon: "🌐", label: "EN LIGNE",    sub: "À distance", color: "#A78BFA", glow: "rgba(167,139,250,0.35)", border: "rgba(167,139,250,0.5)" },
+    { key: "ia",     icon: "🤖", label: "CONTRE L'IA", sub: "Solo",       color: "#00D9FF", glow: "rgba(0,217,255,0.35)",   border: "rgba(0,217,255,0.5)"   },
+    { key: "online", icon: "🌐", label: "EN LIGNE",    sub: "À distance", color: "#A78BFA", glow: "rgba(167,139,250,0.35)", border: "rgba(167,139,250,0.5)" },
   ];
 
   return (

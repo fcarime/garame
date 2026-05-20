@@ -3,7 +3,6 @@ import Hand from "./Hand";
 import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
-import PlayerWaitScreen from "./PlayerWaitScreen";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { getBackgroundCss, BG_ACCENT } from "./backgrounds";
 import {
@@ -49,7 +48,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const [message, setMessage] = useState("");
   const [gameOver, setGameOver] = useState(false);
   const [validCards, setValidCards] = useState([]);
-  const [waitingForPlayer, setWaitingForPlayer] = useState(null);
   const [pendingOpponentCard, setPendingOpponentCard] = useState(null);
   const [specialWinInfo, setSpecialWinInfo] = useState(null);
   const [roundWinInfo, setRoundWinInfo] = useState(null); // { winner, hasBonusWin, lastCard }
@@ -70,7 +68,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     setCurrentPlayer(roundStarter);
     setGameOver(false);
     setRoundWinInfo(null);
-    setWaitingForPlayer(gameMode === "multiplayer" ? roundStarter : null);
 
     const sw = checkSpecialWin(newHands, roundStarter);
     if (sw) {
@@ -107,8 +104,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         // En online, surligner les cartes seulement quand c'est mon tour
         if (currentPlayer !== myIndex) { setValidCards([]); return; }
         displayPlayer = myIndex;
-      } else if (gameMode === "multiplayer") {
-        displayPlayer = currentPlayer;
       } else {
         displayPlayer = 0;
       }
@@ -183,7 +178,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setLeadSuit(null);
       setPlayedCards([]);
       setMessage("");
-      setWaitingForPlayer(null);
       socket.emit("restartGame", { roomCode });
       setGameState("setup");
     });
@@ -265,10 +259,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setLeadSuit(card.suit);
       setMessage(`${players[playerIdx].name} joue ${card.value}${card.suit}`);
       setCurrentPlayer(1 - playerIdx);
-
-      if (gameMode === "multiplayer") {
-        setWaitingForPlayer(1 - playerIdx);
-      }
     } else {
       const demandedSuit = newTrick[0].card.suit;
       const winner = getWinner(newTrick, demandedSuit);
@@ -283,10 +273,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           setLeadSuit(null);
           setCurrentPlayer(winner.player);
           setGameState("playing");
-
-          if (gameMode === "multiplayer") {
-            setWaitingForPlayer(winner.player);
-          }
         }
       }, 2000);
     }
@@ -295,7 +281,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const playCard = (index) => {
     if (gameState !== "playing") return;
     if (gameMode === "ia" && currentPlayer !== 0) return;
-    if (gameMode === "multiplayer" && waitingForPlayer !== null) return;
     if (gameMode === "online" && currentPlayer !== myIndex) return;
 
     if (gameMode === "online" && socket) {
@@ -374,7 +359,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     setRoundStarter(0);
     setGameState("setup");
     setMessage("");
-    setWaitingForPlayer(null);
     if (gameMode === "online" && socket && myIndex === 0) {
       socket.emit("restartGame", { roomCode });
     }
@@ -384,36 +368,21 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     return null;
   }
 
-  const myDisplayName = gameMode === "multiplayer"
-    ? players[currentPlayer].name
-    : gameMode === "online"
-      ? players[myIndex].name
-      : (localPseudo || "Vous");
+  const myDisplayName = gameMode === "online"
+    ? players[myIndex].name
+    : (localPseudo || "Vous");
 
-  const myScore = gameMode === "multiplayer"
-    ? scores[currentPlayer]
-    : gameMode === "online"
-      ? scores[myIndex]
-      : scores[0];
+  const myScore = gameMode === "online" ? scores[myIndex] : scores[0];
 
-  const myTurn = gameMode === "multiplayer"
-    ? waitingForPlayer === null
-    : gameMode === "online"
-      ? currentPlayer === myIndex
-      : currentPlayer === 0;
+  const myTurn = gameMode === "online"
+    ? currentPlayer === myIndex
+    : currentPlayer === 0;
 
-  const myCards = gameMode === "multiplayer" ? hands[currentPlayer]
-    : gameMode === "online" ? hands[myIndex]
-    : hands[0];
+  const myCards = gameMode === "online" ? hands[myIndex] : hands[0];
 
-  const myHandLabel = gameMode === "multiplayer"
-    ? players[currentPlayer].name.toUpperCase()
-    : gameMode === "online" ? `J${myIndex + 1}`
-    : "VOUS";
+  const myHandLabel = gameMode === "online" ? `J${myIndex + 1}` : "VOUS";
 
-  const myAvatarId = gameMode === "multiplayer"
-    ? playerAvatars[currentPlayer]
-    : playerAvatars[myIndex];
+  const myAvatarId = playerAvatars[myIndex];
 
   const opponentIndex = gameMode === "online" ? 1 - myIndex : 1;
 
@@ -455,15 +424,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         pointerEvents: "none", zIndex: 0,
       }} />
 
-      {/* Wait screen */}
-      {gameMode === "multiplayer" && waitingForPlayer !== null && (
-        <PlayerWaitScreen
-          playerNumber={currentPlayer}
-          message="Cliquez n'importe où pour voir vos cartes"
-          onClick={() => setWaitingForPlayer(null)}
-        />
-      )}
-
       {/* ── Header compact ── */}
       <div style={{
         position: "relative", zIndex: 2,
@@ -501,7 +461,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             GARAME
           </div>
           <div style={{ fontSize: "8px", color: "rgba(255,255,255,0.25)", letterSpacing: "2px", marginTop: "1px" }}>
-            MANCHE {currentRound} · {gameMode === "ia" ? "VS IA" : gameMode === "online" ? `EN LIGNE J${myIndex + 1}` : "LOCAL"}
+            MANCHE {currentRound} · {gameMode === "online" ? `EN LIGNE J${myIndex + 1}` : "VS IA"}
           </div>
         </div>
 
