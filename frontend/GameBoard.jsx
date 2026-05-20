@@ -52,6 +52,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const [waitingForPlayer, setWaitingForPlayer] = useState(null);
   const [pendingOpponentCard, setPendingOpponentCard] = useState(null);
   const [specialWinInfo, setSpecialWinInfo] = useState(null);
+  const [roundWinInfo, setRoundWinInfo] = useState(null); // { winner, hasBonusWin, lastCard }
 
   const startRound = () => {
     if (gameMode === "online" && myIndex !== 0) return;
@@ -217,6 +218,15 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     return () => clearTimeout(timer);
   }, [gameState]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-dismiss du round win overlay
+  useEffect(() => {
+    if (!roundWinInfo) return;
+    const timer = setTimeout(() => {
+      setRoundWinInfo(null);
+    }, roundWinInfo.hasBonusWin ? 3800 : 2400);
+    return () => clearTimeout(timer);
+  }, [roundWinInfo]);
+
   useEffect(() => {
     if (gameState === "playing" && currentPlayer === 1 && trick.length < 2 && gameMode === "ia") {
       const timer = setTimeout(() => {
@@ -310,8 +320,14 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setMessage(`${players[winner].name} gagne la manche!`);
     }
 
-    if (newScores[winner] >= 3) {
-      setGameOver(true);
+    const isFinalWin = newScores[winner] >= 3;
+
+    // Overlay festif (sauf pour les wins spéciaux déjà annoncés par leur propre modal)
+    if (lastCard) {
+      setRoundWinInfo({ winner, hasBonusWin, lastCard });
+    }
+
+    if (isFinalWin) {
       setMessage(`${players[winner].name} remporte la partie et les 2 000 FCFA!`);
       if (gameMode === "online" && socket && myIndex === 0) {
         socket.emit("gameResult", {
@@ -320,6 +336,9 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           loserPseudo: players[1 - winner].name,
         });
       }
+      // Délai pour laisser l'overlay de fin de manche / CORRA s'afficher avant le modal Game Over
+      const delay = lastCard ? (hasBonusWin ? 3800 : 2400) : 0;
+      setTimeout(() => setGameOver(true), delay);
     } else {
       setTimeout(() => {
         setCurrentRound(prev => prev + (hasBonusWin ? 2 : 1));
@@ -768,6 +787,171 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         </div>
       )}
 
+      {/* ── Round Win Overlay (CORRA pour 3, festif sinon) ── */}
+      {roundWinInfo && !gameOver && (() => {
+        const { winner, hasBonusWin, lastCard } = roundWinInfo;
+        const isCorra = hasBonusWin;
+        const accentColor = isCorra ? "#FCD34D" : "#00D9FF";
+        const accentGlow = isCorra ? "rgba(251,191,36,0.55)" : "rgba(0,217,255,0.45)";
+        return (
+          <div
+            onClick={() => setRoundWinInfo(null)}
+            style={{
+              position: "fixed", inset: 0,
+              background: isCorra ? "rgba(20,8,2,0.88)" : "rgba(9,14,27,0.78)",
+              backdropFilter: "blur(8px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              zIndex: 1100, cursor: "pointer",
+              animation: "fadeIn 0.25s ease",
+              pointerEvents: "auto",
+            }}
+          >
+            {/* Particules dorées pour la CORRA */}
+            {isCorra && (
+              <>
+                {[...Array(18)].map((_, i) => {
+                  const angle = (i * 360) / 18;
+                  const color = i % 2 === 0 ? "#FCD34D" : "#F59E0B";
+                  return (
+                    <div key={i} style={{
+                      position: "absolute",
+                      left: "50%", top: "50%",
+                      width: "10px", height: "10px",
+                      borderRadius: "50%",
+                      background: color,
+                      boxShadow: `0 0 12px ${color}`,
+                      animation: `sparkleBurst 1.6s ease-out ${i * 0.04}s both`,
+                      "--rot": `${angle}deg`,
+                      pointerEvents: "none",
+                    }} />
+                  );
+                })}
+              </>
+            )}
+
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                position: "relative",
+                textAlign: "center",
+                padding: "32px 40px",
+                animation: isCorra ? "corraPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" : "slideUp 0.35s ease",
+              }}
+            >
+              {isCorra ? (
+                <>
+                  {/* Halo derrière */}
+                  <div style={{
+                    position: "absolute",
+                    top: "50%", left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: "320px", height: "320px",
+                    background: "radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 65%)",
+                    pointerEvents: "none",
+                    animation: "haloPulse 1.6s ease-in-out infinite",
+                  }} />
+
+                  {/* CORRA ! */}
+                  <div style={{
+                    position: "relative",
+                    fontSize: "clamp(56px, 16vw, 96px)",
+                    fontWeight: "900",
+                    letterSpacing: "8px",
+                    background: "linear-gradient(180deg, #FEF3C7 0%, #FCD34D 45%, #F59E0B 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    textShadow: `0 0 40px ${accentGlow}`,
+                    filter: "drop-shadow(0 4px 16px rgba(245,158,11,0.6))",
+                    lineHeight: 1,
+                    marginBottom: "4px",
+                  }}>
+                    CORRA&nbsp;!
+                  </div>
+
+                  {/* Carte 3 mise en avant */}
+                  <div style={{
+                    position: "relative",
+                    display: "inline-block",
+                    margin: "18px 0 14px",
+                    animation: "cardSpin 0.9s ease-out",
+                    filter: "drop-shadow(0 0 24px rgba(251,191,36,0.85))",
+                  }}>
+                    <Card value={lastCard.value} suit={lastCard.suit} />
+                  </div>
+
+                  <div style={{
+                    fontSize: "13px",
+                    fontWeight: "800",
+                    letterSpacing: "4px",
+                    color: "#FEF3C7",
+                    textTransform: "uppercase",
+                    marginBottom: "6px",
+                  }}>
+                    + Manche bonus
+                  </div>
+                  <div style={{
+                    fontSize: "15px",
+                    fontWeight: "700",
+                    color: "#fff",
+                    letterSpacing: "1px",
+                  }}>
+                    {players[winner].name}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Halo discret */}
+                  <div style={{
+                    position: "absolute",
+                    top: "50%", left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: "260px", height: "260px",
+                    background: `radial-gradient(circle, ${accentGlow} 0%, transparent 65%)`,
+                    pointerEvents: "none",
+                    animation: "haloPulse 1.6s ease-in-out infinite",
+                  }} />
+
+                  <div style={{
+                    position: "relative",
+                    fontSize: "11px",
+                    fontWeight: "800",
+                    letterSpacing: "5px",
+                    color: accentColor,
+                    textTransform: "uppercase",
+                    marginBottom: "10px",
+                    opacity: 0.85,
+                  }}>
+                    Manche gagnée
+                  </div>
+                  <div style={{
+                    position: "relative",
+                    fontSize: "clamp(34px, 8vw, 52px)",
+                    fontWeight: "900",
+                    color: "#fff",
+                    letterSpacing: "1px",
+                    textShadow: `0 0 30px ${accentGlow}`,
+                    lineHeight: 1.1,
+                    marginBottom: "8px",
+                  }}>
+                    {players[winner].name}
+                  </div>
+                  <div style={{
+                    position: "relative",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: accentColor,
+                    letterSpacing: "2px",
+                  }}>
+                    +1 / 3
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Game Over Modal ── */}
       {gameOver && (
         <div style={{
@@ -910,6 +1094,25 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             opacity: 0.6;
             transform: translateX(-50%) scale(1.2);
           }
+        }
+        @keyframes corraPop {
+          0%   { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+          60%  { opacity: 1; transform: scale(1.1) rotate(2deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes cardSpin {
+          0%   { transform: rotateY(0deg) scale(0.7); }
+          50%  { transform: rotateY(180deg) scale(1.15); }
+          100% { transform: rotateY(360deg) scale(1); }
+        }
+        @keyframes haloPulse {
+          0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+          50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.15); }
+        }
+        @keyframes sparkleBurst {
+          0%   { opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(0px) scale(0.4); }
+          30%  { opacity: 1; }
+          100% { opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(-260px) scale(0.2); }
         }
       `}</style>
     </div>
