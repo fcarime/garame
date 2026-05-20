@@ -430,7 +430,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "8px 14px 6px",
+        padding: "18px 14px 6px",
         flexShrink: 0,
       }}>
         <button
@@ -596,7 +596,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         flexDirection: "column",
         alignItems: "center",
         gap: "8px",
-        padding: "0 12px 14px",
+        padding: "0 12px 24px",
         marginTop: "clamp(-20px, -4.5vw, -32px)",
       }}>
         {/* Grand portrait de fond — centré sur le bord bas du plateau */}
