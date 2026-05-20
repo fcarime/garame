@@ -19,7 +19,7 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
       gap: "24px",
       overflowX: "hidden",
       position: "relative",
-      padding: "70px 16px 60px",
+      padding: "30px 16px 60px",
       boxSizing: "border-box",
     }}>
 
@@ -31,17 +31,6 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
           display: "flex", justifyContent: "flex-end",
           alignItems: "center", gap: "8px",
         }}>
-          <div style={{
-            fontSize: "9px", fontWeight: "700", color: "#F59E0B",
-            background: "rgba(15,23,42,0.85)",
-            border: "1px solid rgba(245,158,11,0.25)",
-            borderRadius: "12px",
-            padding: "3px 10px",
-            backdropFilter: "blur(12px)",
-            letterSpacing: "0.5px",
-          }}>
-            {bankroll.toLocaleString("fr-FR")} FCFA
-          </div>
           <button onClick={onProfile} style={{
             padding: "7px 14px",
             borderRadius: "20px",
@@ -57,6 +46,17 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
           }}>
             <span>👤</span> {pseudo || "MON COMPTE"}
           </button>
+          <div style={{
+            fontSize: "9px", fontWeight: "700", color: "#F59E0B",
+            background: "rgba(15,23,42,0.85)",
+            border: "1px solid rgba(245,158,11,0.25)",
+            borderRadius: "12px",
+            padding: "3px 10px",
+            backdropFilter: "blur(12px)",
+            letterSpacing: "0.5px",
+          }}>
+            {bankroll.toLocaleString("fr-FR")} FCFA
+          </div>
         </div>
       )}
 
