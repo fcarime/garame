@@ -430,7 +430,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "48px 14px 6px",
+        padding: "90px 14px 6px",
         flexShrink: 0,
       }}>
         <button
