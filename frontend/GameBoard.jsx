@@ -69,6 +69,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     setPlayedCards([]);
     setCurrentPlayer(roundStarter);
     setGameOver(false);
+    setRoundWinInfo(null);
     setWaitingForPlayer(gameMode === "multiplayer" ? roundStarter : null);
 
     const sw = checkSpecialWin(newHands, roundStarter);
@@ -140,6 +141,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setGameState("playing");
       setMessage(`${players[rs].name} commence`);
       setGameOver(false);
+      setRoundWinInfo(null);
     });
 
     socket.on("cardPlayed", ({ card, playerIdx }) => {
@@ -218,12 +220,12 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     return () => clearTimeout(timer);
   }, [gameState]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-dismiss du round win overlay
+  // Auto-dismiss du round win overlay (court pour ne pas bloquer la manche suivante)
   useEffect(() => {
     if (!roundWinInfo) return;
     const timer = setTimeout(() => {
       setRoundWinInfo(null);
-    }, roundWinInfo.hasBonusWin ? 3800 : 2400);
+    }, roundWinInfo.hasBonusWin ? 2800 : 1600);
     return () => clearTimeout(timer);
   }, [roundWinInfo]);
 
@@ -337,7 +339,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         });
       }
       // Délai pour laisser l'overlay de fin de manche / CORRA s'afficher avant le modal Game Over
-      const delay = lastCard ? (hasBonusWin ? 3800 : 2400) : 0;
+      const delay = lastCard ? (hasBonusWin ? 2800 : 1600) : 0;
       setTimeout(() => setGameOver(true), delay);
     } else {
       setTimeout(() => {
@@ -795,15 +797,15 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         const accentGlow = isCorra ? "rgba(251,191,36,0.55)" : "rgba(0,217,255,0.45)";
         return (
           <div
-            onClick={() => setRoundWinInfo(null)}
             style={{
               position: "fixed", inset: 0,
-              background: isCorra ? "rgba(20,8,2,0.88)" : "rgba(9,14,27,0.78)",
-              backdropFilter: "blur(8px)",
+              background: isCorra ? "rgba(20,8,2,0.55)" : "rgba(9,14,27,0.45)",
+              backdropFilter: "blur(3px)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              zIndex: 1100, cursor: "pointer",
+              zIndex: 1100,
               animation: "fadeIn 0.25s ease",
-              pointerEvents: "auto",
+              // Non-bloquant : la manche suivante peut commencer sans gêne
+              pointerEvents: "none",
             }}
           >
             {/* Particules dorées pour la CORRA */}
