@@ -106,9 +106,9 @@ io.on("connection", (socket) => {
     console.log(`Résultat salle ${roomCode} : ${winnerPseudo} +2000 / ${loserPseudo} -2000`);
   });
 
-  // Relais mains début de manche
-  socket.on("startRound", ({ roomCode, hands, roundStarter }) => {
-    socket.to(roomCode).emit("roundStarted", { hands, roundStarter });
+  // Relais mains début de manche (avec état complet pour resync)
+  socket.on("startRound", ({ roomCode, hands, roundStarter, scores, currentRound }) => {
+    socket.to(roomCode).emit("roundStarted", { hands, roundStarter, scores, currentRound });
   });
 
   // Relais coup joué
@@ -116,12 +116,35 @@ io.on("connection", (socket) => {
     socket.to(roomCode).emit("cardPlayed", { card, playerIdx });
   });
 
+  // Relais redémarrage de partie (host -> remote)
+  socket.on("restartGame", ({ roomCode }) => {
+    socket.to(roomCode).emit("gameRestarted");
+  });
+
+  // Demande de redémarrage par le distant (remote -> host)
+  socket.on("requestRestart", ({ roomCode }) => {
+    socket.to(roomCode).emit("restartRequested");
+  });
+
+  // Le joueur quitte volontairement la partie (← MENU / ACCUEIL)
+  socket.on("leaveRoom", ({ roomCode }) => {
+    if (!roomCode) return;
+    socket.to(roomCode).emit("opponentDisconnected");
+    socket.leave(roomCode);
+    if (rooms[roomCode]) {
+      delete rooms[roomCode];
+      console.log(`Salle ${roomCode} fermée (départ volontaire: ${socket.id})`);
+    }
+  });
+
   socket.on("disconnect", () => {
     for (const [code, room] of Object.entries(rooms)) {
       if (room.players.includes(socket.id)) {
-        socket.to(code).emit("opponentDisconnected");
+        // io.to() au lieu de socket.to() : le socket a déjà quitté ses rooms,
+        // donc socket.to() est peu fiable ici.
+        io.to(code).emit("opponentDisconnected");
         delete rooms[code];
-        console.log(`Salle ${code} fermée`);
+        console.log(`Salle ${code} fermée (déconnexion: ${socket.id})`);
       }
     }
   });

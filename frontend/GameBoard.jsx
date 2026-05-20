@@ -82,7 +82,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     setMessage(`${players[roundStarter].name} commence`);
 
     if (gameMode === "online" && socket) {
-      socket.emit("startRound", { roomCode, hands: newHands, roundStarter });
+      socket.emit("startRound", { roomCode, hands: newHands, roundStarter, scores, currentRound });
     }
   };
 
@@ -121,7 +121,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   useEffect(() => {
     if (gameMode !== "online" || !socket) return;
 
-    socket.on("roundStarted", ({ hands: newHands, roundStarter: rs }) => {
+    socket.on("roundStarted", ({ hands: newHands, roundStarter: rs, scores: syncedScores, currentRound: syncedRound }) => {
       setHands([sortHand(newHands[0]), sortHand(newHands[1])]);
       setPot(INITIAL_POT * 2);
       setTrick([]);
@@ -129,6 +129,13 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setPlayedCards([]);
       setCurrentPlayer(rs);
       setRoundStarter(rs);
+      // Resync depuis l'hôte (corrige les désyncs après victoire spéciale)
+      if (Array.isArray(syncedScores) && syncedScores.length === 2) {
+        setScores(syncedScores);
+      }
+      if (typeof syncedRound === "number") {
+        setCurrentRound(syncedRound);
+      }
       setGameState("playing");
       setMessage(`${players[rs].name} commence`);
       setGameOver(false);
@@ -148,11 +155,43 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       if (typeof bankrolls[myName] === "number") setMyBankroll(bankrolls[myName]);
     });
 
+    socket.on("gameRestarted", () => {
+      setScores([0, 0]);
+      setCurrentRound(1);
+      setRoundStarter(0);
+      setGameOver(false);
+      setHands([[], []]);
+      setTrick([]);
+      setLeadSuit(null);
+      setPlayedCards([]);
+      setMessage("");
+      setGameState("setup");
+    });
+
+    // Le distant a cliqué REJOUER → l'hôte relance la partie
+    socket.on("restartRequested", () => {
+      if (myIndex !== 0) return;
+      setScores([0, 0]);
+      setCurrentRound(1);
+      setRoundStarter(0);
+      setGameOver(false);
+      setHands([[], []]);
+      setTrick([]);
+      setLeadSuit(null);
+      setPlayedCards([]);
+      setMessage("");
+      setWaitingForPlayer(null);
+      socket.emit("restartGame", { roomCode });
+      setGameState("setup");
+    });
+
     return () => {
       socket.off("roundStarted");
       socket.off("cardPlayed");
       socket.off("opponentDisconnected");
       socket.off("bankrollUpdated");
+      socket.off("gameRestarted");
+      socket.off("restartRequested");
     };
   }, [gameMode, socket]);
 
@@ -291,12 +330,33 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   };
 
   const restartGame = () => {
+    // En online, si je suis le distant : demander à l'hôte de relancer.
+    // Sinon l'hôte ne le saurait pas et le distant resterait bloqué en "setup".
+    if (gameMode === "online" && socket && myIndex !== 0) {
+      setScores([0, 0]);
+      setCurrentRound(1);
+      setRoundStarter(0);
+      setGameOver(false);
+      setHands([[], []]);
+      setTrick([]);
+      setLeadSuit(null);
+      setPlayedCards([]);
+      setMessage("En attente du redémarrage de l'hôte…");
+      setWaitingForPlayer(null);
+      setGameState("setup");
+      socket.emit("requestRestart", { roomCode });
+      return;
+    }
+
     setScores([0, 0]);
     setCurrentRound(1);
     setRoundStarter(0);
     setGameState("setup");
     setMessage("");
     setWaitingForPlayer(null);
+    if (gameMode === "online" && socket && myIndex === 0) {
+      socket.emit("restartGame", { roomCode });
+    }
   };
 
   if (gameState === "setup" && hands[0].length === 0) {
@@ -393,7 +453,12 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         flexShrink: 0,
       }}>
         <button
-          onClick={onBackToHome}
+          onClick={() => {
+            if (gameMode === "online" && socket) {
+              socket.emit("leaveRoom", { roomCode });
+            }
+            onBackToHome();
+          }}
           style={{
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.1)",
@@ -801,7 +866,12 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                 REJOUER
               </button>
               <button
-                onClick={onBackToHome}
+                onClick={() => {
+                  if (gameMode === "online" && socket) {
+                    socket.emit("leaveRoom", { roomCode });
+                  }
+                  onBackToHome();
+                }}
                 style={{
                   padding: "13px 28px",
                   fontSize: "13px",
