@@ -116,6 +116,11 @@ io.on("connection", (socket) => {
     socket.to(roomCode).emit("specialWinNotified", { sw, hands, roundStarter, scores, currentRound, potValue });
   });
 
+  // Relais 33 Export
+  socket.on("tripleExport", ({ roomCode, winner }) => {
+    socket.to(roomCode).emit("tripleExportNotified", { winner });
+  });
+
   // Relais coup joué
   socket.on("playCard", ({ roomCode, card, playerIdx }) => {
     socket.to(roomCode).emit("cardPlayed", { card, playerIdx });

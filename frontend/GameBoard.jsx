@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Hand from "./Hand";
 import Card from "./Card";
 import PokerTable from "./PokerTable";
@@ -53,9 +53,11 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const [pendingOpponentCard, setPendingOpponentCard] = useState(null);
   const [specialWinInfo, setSpecialWinInfo] = useState(null);
   const [roundWinInfo, setRoundWinInfo] = useState(null); // { winner, hasBonusWin, lastCard }
-  const [reconnecting, setReconnecting] = useState(false); // ma propre reconnexion
-  const [opponentReconnecting, setOpponentReconnecting] = useState(0); // countdown adversaire
-  const [opponentLeft, setOpponentLeft] = useState(false); // adversaire parti volontairement
+  const [reconnecting, setReconnecting] = useState(false);
+  const [opponentReconnecting, setOpponentReconnecting] = useState(0);
+  const [opponentLeft, setOpponentLeft] = useState(false);
+  const [exportInfo, setExportInfo] = useState(null); // { winner } — 33 Export
+  const penultimateCardsRef = useRef([null, null]); // 4ème carte jouée par chaque joueur
 
   const startRound = () => {
     if (gameMode === "online" && myIndex !== 0) return;
@@ -73,6 +75,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     setCurrentPlayer(roundStarter);
     setGameOver(false);
     setRoundWinInfo(null);
+    setExportInfo(null);
+    penultimateCardsRef.current = [null, null];
 
     const sw = checkSpecialWin(newHands, roundStarter);
     if (sw) {
@@ -209,6 +213,12 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setReconnecting(false);
     });
 
+    socket.on("tripleExportNotified", ({ winner }) => {
+      setExportInfo({ winner, lastCard: null, penultCard: null });
+      setMessage(`${players[winner].name} — 33 EXPORT !`);
+      setTimeout(() => setGameOver(true), 4500);
+    });
+
     socket.on("opponentLeft", () => {
       setOpponentReconnecting(0);
       setOpponentLeft(true);
@@ -275,6 +285,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       socket.off("rejoined");
       socket.off("gameStateSyncRequest");
       socket.off("gameStateSync");
+      socket.off("tripleExportNotified");
       socket.off("opponentLeft");
       socket.off("opponentDisconnected");
       socket.off("bankrollUpdated");
@@ -346,6 +357,11 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     newHands[playerIdx] = newHands[playerIdx].filter((_, i) => i !== cardIndex);
     setHands(newHands);
 
+    // Mémorise la 4ème carte jouée (avant-dernière = 1 carte restante après)
+    if (newHands[playerIdx].length === 1) {
+      penultimateCardsRef.current[playerIdx] = card;
+    }
+
     setPlayedCards(prev => [...prev, { player: playerIdx, card }]);
 
     const newTrick = [...trick, { player: playerIdx, card }];
@@ -363,7 +379,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
 
       setTimeout(() => {
         if (isHandEmpty(newHands[0]) && isHandEmpty(newHands[1])) {
-          endRound(winner.player, winner.card);
+          const penultCard = penultimateCardsRef.current[winner.player];
+          endRound(winner.player, winner.card, penultCard);
         } else {
           setTrick([]);
           setLeadSuit(null);
@@ -387,15 +404,35 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     playCardLogic(currentPlayer, index);
   };
 
-  const endRound = (winner, lastCard = null) => {
-    const hasBonusWin = lastCard?.value === "3";
+  const endRound = (winner, lastCard = null, penultCard = null) => {
+    const has33Export = lastCard?.value === "3" && penultCard?.value === "3";
+    const hasBonusWin = !has33Export && lastCard?.value === "3";
 
     setGameState("roundEnd");
 
     const newScores = [...scores];
-    newScores[winner] += 1; // +1 manche gagnée
-    if (hasBonusWin) newScores[winner] += 1; // manche bonus automatique
+    if (has33Export) {
+      newScores[winner] = 3; // victoire totale instantanée
+    } else {
+      newScores[winner] += 1;
+      if (hasBonusWin) newScores[winner] += 1;
+    }
     setScores(newScores);
+
+    if (has33Export) {
+      setMessage(`${players[winner].name} — 33 EXPORT !`);
+      setExportInfo({ winner, lastCard, penultCard });
+      if (gameMode === "online" && socket && myIndex === 0) {
+        socket.emit("tripleExport", { roomCode, winner });
+        socket.emit("gameResult", {
+          roomCode,
+          winnerPseudo: players[winner].name,
+          loserPseudo: players[1 - winner].name,
+        });
+      }
+      setTimeout(() => setGameOver(true), 4500);
+      return;
+    }
 
     if (hasBonusWin) {
       setMessage(`${players[winner].name} gagne + manche bonus (dernier 3)!`);
@@ -405,7 +442,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
 
     const isFinalWin = newScores[winner] >= 3;
 
-    // Overlay festif (sauf pour les wins spéciaux déjà annoncés par leur propre modal)
     if (lastCard) {
       setRoundWinInfo({ winner, hasBonusWin, lastCard });
     }
@@ -419,7 +455,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           loserPseudo: players[1 - winner].name,
         });
       }
-      // Délai pour laisser l'overlay de fin de manche / CORRA s'afficher avant le modal Game Over
       const delay = lastCard ? (hasBonusWin ? 2800 : 1600) : 0;
       setTimeout(() => setGameOver(true), delay);
     } else {
@@ -796,6 +831,97 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
             En attente de reconnexion…
           </div>
+        </div>
+      )}
+
+      {/* ── 33 Export Overlay ── */}
+      {exportInfo && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 95,
+          background: "rgba(4,6,14,0.97)",
+          backdropFilter: "blur(12px)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          gap: "16px",
+          animation: "fadeIn 0.3s ease",
+        }}>
+          {/* Particules rouges */}
+          {Array.from({ length: 24 }).map((_, i) => {
+            const angle = (i / 24) * 360;
+            return (
+              <div key={i} style={{
+                position: "absolute",
+                top: "50%", left: "50%",
+                width: "6px", height: "6px",
+                borderRadius: "50%",
+                background: i % 3 === 0 ? "#ef4444" : i % 3 === 1 ? "#FCD34D" : "#fff",
+                boxShadow: `0 0 10px ${i % 3 === 0 ? "#ef4444" : "#FCD34D"}`,
+                animation: `sparkleBurst 2s ease-out ${i * 0.06}s both`,
+                "--rot": `${angle}deg`,
+                pointerEvents: "none",
+              }} />
+            );
+          })}
+
+          {/* Halo rouge */}
+          <div style={{
+            position: "absolute",
+            top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "400px", height: "400px",
+            background: "radial-gradient(circle, rgba(239,68,68,0.3) 0%, transparent 65%)",
+            pointerEvents: "none",
+            animation: "haloPulse 1.8s ease-in-out infinite",
+          }} />
+
+          {/* Texte 33 EXPORT */}
+          <div style={{
+            position: "relative",
+            fontSize: "clamp(52px, 15vw, 100px)",
+            fontWeight: "900",
+            letterSpacing: "6px",
+            background: "linear-gradient(180deg, #fff 0%, #fca5a5 40%, #ef4444 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            filter: "drop-shadow(0 4px 24px rgba(239,68,68,0.8))",
+            lineHeight: 1,
+            animation: "corraPop 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+          }}>
+            33 EXPORT
+          </div>
+
+          <div style={{
+            fontSize: "clamp(11px, 3vw, 14px)",
+            fontWeight: "800",
+            letterSpacing: "4px",
+            color: "#fca5a5",
+            textTransform: "uppercase",
+          }}>
+            3 manches remportées d'un coup !
+          </div>
+
+          <div style={{
+            fontSize: "16px", fontWeight: "700",
+            color: "#fff", letterSpacing: "1px",
+            marginTop: "4px",
+          }}>
+            {players[exportInfo.winner].name}
+          </div>
+
+          {/* Les deux 3 */}
+          {exportInfo.lastCard && exportInfo.penultCard && (
+            <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
+              {[exportInfo.penultCard, exportInfo.lastCard].map((c, i) => (
+                <div key={i} style={{
+                  filter: "drop-shadow(0 0 20px rgba(239,68,68,0.9))",
+                  animation: `cardSpin 0.9s ease-out ${i * 0.2}s both`,
+                }}>
+                  <Card value={c.value} suit={c.suit} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

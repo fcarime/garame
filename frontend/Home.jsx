@@ -255,7 +255,8 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
         {[
           ["⚡", "#FCD34D", "Triple Sept",    "≥ 3 cartes 7 en main → victoire immédiate"],
           ["🃏", "#00D9FF", "Main Basse",      "Somme des cartes < 21 → victoire immédiate"],
-          ["🎯", "#4ade80", "Bonus Dernier 3", "Gagner avec un 3 → manche suivante offerte"],
+          ["🎯", "#4ade80", "Dernier 3",       "Gagner avec un 3 → manche suivante offerte"],
+          ["🔴", "#ef4444", "33 Export",       "Jouer deux 3 de suite sur les 2 derniers plis → 3 manches gagnées d'un coup !"],
         ].map(([icon, color, title, text]) => (
           <div key={title} style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginBottom: "6px" }}>
             <span style={{ fontSize: "12px", flexShrink: 0 }}>{icon}</span>

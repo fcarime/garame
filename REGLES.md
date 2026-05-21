@@ -73,3 +73,13 @@ Ordre croissant : **3 < 4 < 5 < 6 < 7 < 8 < 9**
 - Le compteur de manches avance de 2.
 - Le joueur qui commence la manche d'après reste le même (alternance double = inchangé).
 - Si ce double gain atteint ou dépasse 3 manches, la partie se termine immédiatement.
+
+---
+
+## Bonus : 33 Export 🔴 *(priorité sur Dernier 3)*
+> Si un joueur termine la manche en jouant **deux 3 consécutifs** sur les deux derniers plis (sa 4ème carte est un 3 **et** sa 5ème et dernière carte est aussi un 3), il remporte instantanément **les 3 manches** de la partie.
+
+- Condition : le même joueur joue un 3 sur l'avant-dernier pli **et** un 3 sur le dernier pli, **et** gagne ce dernier pli.
+- Résultat : victoire totale immédiate — son score passe directement à 3 manches.
+- Priorité sur le Dernier 3 (les deux 3 consécutifs l'emportent).
+- Un effet visuel spécial "33 EXPORT" s'affiche avant l'écran de fin de partie.
