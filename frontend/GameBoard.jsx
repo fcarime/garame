@@ -235,7 +235,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           const aiCard = getAIMove(hands[1], leadSuit, trick);
           playCardLogic(1, hands[1].indexOf(aiCard));
         }
-      }, 1000);
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [currentPlayer, gameState, hands, trick, leadSuit, gameMode]);
@@ -276,7 +276,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           setCurrentPlayer(winner.player);
           setGameState("playing");
         }
-      }, 2000);
+      }, 900);
     }
   };
 
