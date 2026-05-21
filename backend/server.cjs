@@ -142,14 +142,56 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Demande de reconnexion (pseudo + roomCode après retour sur la page)
+  socket.on("rejoinRoom", ({ roomCode, pseudo, playerIndex }) => {
+    const room = rooms[roomCode];
+    if (!room) return socket.emit("rejoinError", "Salle expirée ou introuvable");
+
+    // Annule le timer de déconnexion si encore en attente
+    if (room.reconnectTimer) {
+      clearTimeout(room.reconnectTimer);
+      room.reconnectTimer = null;
+    }
+
+    // Met à jour le socket id du joueur dans la salle
+    room.players[playerIndex] = socket.id;
+    socket.join(roomCode);
+
+    // Confirme la reconnexion au joueur revenu
+    socket.emit("rejoined", { playerIndex, roomCode });
+    // Notifie l'adversaire que le joueur est de retour
+    socket.to(roomCode).emit("opponentRejoined");
+    console.log(`${pseudo} reconnecté à ${roomCode}`);
+  });
+
+  // Demande de sync d'état de jeu (envoyé par le joueur reconnecté à l'hôte)
+  socket.on("requestGameState", ({ roomCode }) => {
+    socket.to(roomCode).emit("gameStateSyncRequest");
+  });
+
+  // L'hôte répond avec l'état courant du jeu
+  socket.on("sendGameState", ({ roomCode, state }) => {
+    socket.to(roomCode).emit("gameStateSync", state);
+  });
+
   socket.on("disconnect", () => {
     for (const [code, room] of Object.entries(rooms)) {
-      if (room.players.includes(socket.id)) {
-        // io.to() au lieu de socket.to() : le socket a déjà quitté ses rooms,
-        // donc socket.to() est peu fiable ici.
-        io.to(code).emit("opponentDisconnected");
-        delete rooms[code];
-        console.log(`Salle ${code} fermée (déconnexion: ${socket.id})`);
+      const idx = room.players.indexOf(socket.id);
+      if (idx !== -1) {
+        // Marque le slot comme déconnecté temporairement
+        room.players[idx] = null;
+        // Notifie l'adversaire avec le délai de grâce
+        io.to(code).emit("opponentReconnecting", { seconds: 30 });
+        console.log(`Joueur déconnecté de ${code}, grâce 30s...`);
+
+        // Ferme la salle seulement après 30 secondes sans reconnexion
+        room.reconnectTimer = setTimeout(() => {
+          if (rooms[code]) {
+            io.to(code).emit("opponentDisconnected");
+            delete rooms[code];
+            console.log(`Salle ${code} fermée (timeout reconnexion)`);
+          }
+        }, 30000);
       }
     }
   });

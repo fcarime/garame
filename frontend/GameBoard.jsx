@@ -53,6 +53,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const [pendingOpponentCard, setPendingOpponentCard] = useState(null);
   const [specialWinInfo, setSpecialWinInfo] = useState(null);
   const [roundWinInfo, setRoundWinInfo] = useState(null); // { winner, hasBonusWin, lastCard }
+  const [reconnecting, setReconnecting] = useState(false); // ma propre reconnexion
+  const [opponentReconnecting, setOpponentReconnecting] = useState(0); // countdown adversaire
 
   const startRound = () => {
     if (gameMode === "online" && myIndex !== 0) return;
@@ -165,10 +167,62 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setPendingOpponentCard({ card, playerIdx });
     });
 
+    socket.on("opponentReconnecting", ({ seconds }) => {
+      setOpponentReconnecting(seconds);
+      const interval = setInterval(() => {
+        setOpponentReconnecting(prev => {
+          if (prev <= 1) { clearInterval(interval); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    });
+
+    socket.on("opponentRejoined", () => {
+      setOpponentReconnecting(0);
+      setMessage("L'adversaire est de retour !");
+    });
+
+    socket.on("rejoined", () => {
+      setReconnecting(false);
+      if (myIndex !== 0) socket.emit("requestGameState", { roomCode });
+    });
+
+    socket.on("gameStateSyncRequest", () => {
+      socket.emit("sendGameState", {
+        roomCode,
+        state: { hands, trick, leadSuit, playedCards, pot, scores, currentPlayer, roundStarter, gameState, currentRound },
+      });
+    });
+
+    socket.on("gameStateSync", (state) => {
+      setHands([sortHand(state.hands[0]), sortHand(state.hands[1])]);
+      setTrick(state.trick);
+      setLeadSuit(state.leadSuit);
+      setPlayedCards(state.playedCards);
+      setPot(state.pot);
+      setScores(state.scores);
+      setCurrentPlayer(state.currentPlayer);
+      setRoundStarter(state.roundStarter);
+      setCurrentRound(state.currentRound);
+      setGameState(state.gameState);
+      setReconnecting(false);
+    });
+
     socket.on("opponentDisconnected", () => {
+      setOpponentReconnecting(0);
       setMessage("L'adversaire s'est déconnecté!");
       setGameOver(true);
     });
+
+    const onSocketDisconnect = () => {
+      setReconnecting(true);
+    };
+    const onSocketReconnect = () => {
+      const pseudo = players[myIndex]?.name;
+      socket.emit("rejoinRoom", { roomCode, pseudo, playerIndex: myIndex });
+    };
+    socket.on("disconnect", onSocketDisconnect);
+    socket.on("connect", onSocketReconnect);
 
     socket.on("bankrollUpdated", (bankrolls) => {
       const myName = players[myIndex].name;
@@ -208,10 +262,17 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       socket.off("roundStarted");
       socket.off("specialWinNotified");
       socket.off("cardPlayed");
+      socket.off("opponentReconnecting");
+      socket.off("opponentRejoined");
+      socket.off("rejoined");
+      socket.off("gameStateSyncRequest");
+      socket.off("gameStateSync");
       socket.off("opponentDisconnected");
       socket.off("bankrollUpdated");
       socket.off("gameRestarted");
       socket.off("restartRequested");
+      socket.off("disconnect", onSocketDisconnect);
+      socket.off("connect", onSocketReconnect);
     };
   }, [gameMode, socket]);
 
@@ -681,6 +742,50 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           )}
         </div>
       </div>
+
+      {/* ── Overlay : ma propre reconnexion ── */}
+      {reconnecting && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 100,
+          background: "rgba(4,12,30,0.92)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: "16px",
+          backdropFilter: "blur(6px)",
+        }}>
+          <div style={{ fontSize: "32px" }}>📡</div>
+          <div style={{ fontSize: "14px", fontWeight: "800", color: "#00D9FF", letterSpacing: "2px" }}>
+            RECONNEXION…
+          </div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+            Retour dans la partie en cours…
+          </div>
+        </div>
+      )}
+
+      {/* ── Overlay : adversaire en cours de reconnexion ── */}
+      {opponentReconnecting > 0 && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99,
+          background: "rgba(4,12,30,0.85)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: "16px",
+          backdropFilter: "blur(4px)",
+        }}>
+          <div style={{ fontSize: "32px" }}>⏳</div>
+          <div style={{ fontSize: "14px", fontWeight: "800", color: "#F59E0B", letterSpacing: "2px" }}>
+            ADVERSAIRE DÉCONNECTÉ
+          </div>
+          <div style={{
+            fontSize: "36px", fontWeight: "900", color: "#FCD34D",
+            textShadow: "0 0 20px rgba(252,211,77,0.5)",
+          }}>
+            {opponentReconnecting}s
+          </div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+            En attente de reconnexion…
+          </div>
+        </div>
+      )}
 
       {/* ── Special Win Overlay ── */}
       {specialWinInfo && (

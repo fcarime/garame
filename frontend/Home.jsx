@@ -23,13 +23,22 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
       boxSizing: "border-box",
     }}>
 
-      {/* Bouton Mon Compte + bankroll — dans le flux de la page */}
+      {/* Background grid */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: `
+          linear-gradient(rgba(0,217,255,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,217,255,0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: "48px 48px",
+      }} />
+
+      {/* MON COMPTE à gauche (G) + montant à droite (E) — au-dessus de GARAME */}
       {onProfile && (
         <div style={{
           position: "relative", zIndex: 1,
-          width: "100%", maxWidth: "720px",
-          display: "flex", justifyContent: "flex-end",
-          alignItems: "center", gap: "8px",
+          width: "min(500px, 80vw)",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
           <button onClick={onProfile} style={{
             padding: "7px 14px",
@@ -47,28 +56,19 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
             <span>👤</span> {pseudo || "MON COMPTE"}
           </button>
           <div style={{
-            fontSize: "9px", fontWeight: "700", color: "#F59E0B",
+            padding: "7px 14px",
+            borderRadius: "20px",
+            border: "1px solid rgba(245,158,11,0.3)",
             background: "rgba(15,23,42,0.85)",
-            border: "1px solid rgba(245,158,11,0.25)",
-            borderRadius: "12px",
-            padding: "3px 10px",
+            color: "#F59E0B",
+            fontSize: "10px", fontWeight: "700",
+            letterSpacing: "1.5px",
             backdropFilter: "blur(12px)",
-            letterSpacing: "0.5px",
           }}>
             {bankroll.toLocaleString("fr-FR")} FCFA
           </div>
         </div>
       )}
-
-      {/* Background grid */}
-      <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-        background: `
-          linear-gradient(rgba(0,217,255,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,217,255,0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: "48px 48px",
-      }} />
 
       {/* Titre */}
       <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
