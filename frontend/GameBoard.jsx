@@ -76,6 +76,9 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setGameState("specialWin");
       setSpecialWinInfo({ ...sw, hands: newHands, potValue: newPot });
       setMessage(`${players[sw.player].name} a une main spéciale!`);
+      if (gameMode === "online" && socket) {
+        socket.emit("specialWin", { roomCode, sw, hands: newHands, roundStarter, scores, currentRound, potValue: newPot });
+      }
       return;
     }
 
@@ -141,6 +144,23 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setRoundWinInfo(null);
     });
 
+    socket.on("specialWinNotified", ({ sw, hands: newHands, roundStarter: rs, scores: syncedScores, currentRound: syncedRound, potValue }) => {
+      setHands([sortHand(newHands[0]), sortHand(newHands[1])]);
+      setPot(potValue);
+      setTrick([]);
+      setLeadSuit(null);
+      setPlayedCards([]);
+      setCurrentPlayer(rs);
+      setRoundStarter(rs);
+      if (Array.isArray(syncedScores)) setScores(syncedScores);
+      if (typeof syncedRound === "number") setCurrentRound(syncedRound);
+      setGameOver(false);
+      setRoundWinInfo(null);
+      setGameState("specialWin");
+      setSpecialWinInfo({ ...sw, hands: newHands, potValue });
+      setMessage(`${players[sw.player].name} a une main spéciale!`);
+    });
+
     socket.on("cardPlayed", ({ card, playerIdx }) => {
       setPendingOpponentCard({ card, playerIdx });
     });
@@ -186,6 +206,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
 
     return () => {
       socket.off("roundStarted");
+      socket.off("specialWinNotified");
       socket.off("cardPlayed");
       socket.off("opponentDisconnected");
       socket.off("bankrollUpdated");

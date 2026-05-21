@@ -111,6 +111,11 @@ io.on("connection", (socket) => {
     socket.to(roomCode).emit("roundStarted", { hands, roundStarter, scores, currentRound });
   });
 
+  // Relais victoire spéciale (triple 7 ou main ≤ 21)
+  socket.on("specialWin", ({ roomCode, sw, hands, roundStarter, scores, currentRound, potValue }) => {
+    socket.to(roomCode).emit("specialWinNotified", { sw, hands, roundStarter, scores, currentRound, potValue });
+  });
+
   // Relais coup joué
   socket.on("playCard", ({ roomCode, card, playerIdx }) => {
     socket.to(roomCode).emit("cardPlayed", { card, playerIdx });
