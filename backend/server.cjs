@@ -134,9 +134,10 @@ io.on("connection", (socket) => {
   // Le joueur quitte volontairement la partie (← MENU / ACCUEIL)
   socket.on("leaveRoom", ({ roomCode }) => {
     if (!roomCode) return;
-    socket.to(roomCode).emit("opponentDisconnected");
+    socket.to(roomCode).emit("opponentLeft"); // départ volontaire → pas de reconnexion possible
     socket.leave(roomCode);
     if (rooms[roomCode]) {
+      if (rooms[roomCode].reconnectTimer) clearTimeout(rooms[roomCode].reconnectTimer);
       delete rooms[roomCode];
       console.log(`Salle ${roomCode} fermée (départ volontaire: ${socket.id})`);
     }

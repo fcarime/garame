@@ -55,6 +55,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const [roundWinInfo, setRoundWinInfo] = useState(null); // { winner, hasBonusWin, lastCard }
   const [reconnecting, setReconnecting] = useState(false); // ma propre reconnexion
   const [opponentReconnecting, setOpponentReconnecting] = useState(0); // countdown adversaire
+  const [opponentLeft, setOpponentLeft] = useState(false); // adversaire parti volontairement
 
   const startRound = () => {
     if (gameMode === "online" && myIndex !== 0) return;
@@ -208,6 +209,13 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setReconnecting(false);
     });
 
+    socket.on("opponentLeft", () => {
+      setOpponentReconnecting(0);
+      setOpponentLeft(true);
+      setMessage("L'adversaire a quitté la partie.");
+      setGameOver(true);
+    });
+
     socket.on("opponentDisconnected", () => {
       setOpponentReconnecting(0);
       setMessage("L'adversaire s'est déconnecté!");
@@ -267,6 +275,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       socket.off("rejoined");
       socket.off("gameStateSyncRequest");
       socket.off("gameStateSync");
+      socket.off("opponentLeft");
       socket.off("opponentDisconnected");
       socket.off("bankrollUpdated");
       socket.off("gameRestarted");
@@ -1113,24 +1122,26 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             </div>
 
             <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-              <button
-                onClick={restartGame}
-                style={{
-                  padding: "13px 28px",
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  letterSpacing: "1.5px",
-                  textTransform: "uppercase",
-                  background: "#00D9FF",
-                  color: "#0F172A",
-                  border: "none",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  boxShadow: "0 0 20px rgba(0,217,255,0.4)",
-                }}
-              >
-                REJOUER
-              </button>
+              {!(gameMode === "online" && opponentLeft) && (
+                <button
+                  onClick={restartGame}
+                  style={{
+                    padding: "13px 28px",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    letterSpacing: "1.5px",
+                    textTransform: "uppercase",
+                    background: "#00D9FF",
+                    color: "#0F172A",
+                    border: "none",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    boxShadow: "0 0 20px rgba(0,217,255,0.4)",
+                  }}
+                >
+                  REJOUER
+                </button>
+              )}
               <button
                 onClick={() => {
                   if (gameMode === "online" && socket) {
