@@ -134,7 +134,6 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setPlayedCards([]);
       setCurrentPlayer(rs);
       setRoundStarter(rs);
-      // Resync depuis l'hôte (corrige les désyncs après victoire spéciale)
       if (Array.isArray(syncedScores) && syncedScores.length === 2) {
         setScores(syncedScores);
       }
@@ -145,6 +144,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setMessage(`${players[rs].name} commence`);
       setGameOver(false);
       setRoundWinInfo(null);
+      setSpecialWinInfo(null); // efface l'overlay si encore visible
     });
 
     socket.on("specialWinNotified", ({ sw, hands: newHands, roundStarter: rs, scores: syncedScores, currentRound: syncedRound, potValue }) => {
@@ -302,7 +302,10 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     const sw = specialWinInfo;
     const timer = setTimeout(() => {
       setSpecialWinInfo(null);
-      endRound(sw.player);
+      // Le joueur distant ne calcule pas endRound — il attend roundStarted de l'hôte
+      if (gameMode !== "online" || myIndex === 0) {
+        endRound(sw.player);
+      }
     }, 4000);
     return () => clearTimeout(timer);
   }, [gameState]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -802,7 +805,9 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           onClick={() => {
             const sw = specialWinInfo;
             setSpecialWinInfo(null);
-            endRound(sw.player);
+            if (gameMode !== "online" || myIndex === 0) {
+              endRound(sw.player);
+            }
           }}
           style={{
             position: "fixed", inset: 0,
