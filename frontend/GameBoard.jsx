@@ -4,7 +4,9 @@ import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
-import { getBackgroundCss, BG_ACCENT } from "./backgrounds";
+import { BG_ACCENT } from "./backgrounds";
+import backgroundUrl from "./public/barckground.png";
+import fondTableUrl from "./public/fond_table.png";
 import {
   createDeck,
   dealCards,
@@ -391,41 +393,33 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     : playerAvatars[opponentIndex];
 
   return (
-    <div style={{
+    <div className="gameboard-root" style={{
       width: "100%",
       height: "100vh",
-      background: "#060a18",
+      backgroundImage: `url(${backgroundUrl})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      backgroundColor: "#0a0a1f",
       display: "flex",
       flexDirection: "column",
       overflow: "hidden",
       position: "relative",
     }}>
-      {/* Fond paysage africain — change à chaque partie */}
-      <div style={{
-        position: "absolute",
-        top: "50%", left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "min(95vw, 560px)",
-        height: "min(95vw, 560px)",
-        ...getBackgroundCss(bgIndex),
-        opacity: 0.18,
-        zIndex: 0,
-        pointerEvents: "none",
-        mixBlendMode: "screen",
-      }} />
-
-      {/* Halo radial teinté par l'accent du fond */}
-      <div style={{
-        position: "absolute",
-        top: "35%", left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "70vw", height: "70vw",
-        background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`,
-        pointerEvents: "none", zIndex: 0,
-      }} />
+      <style>{`
+        @media (max-width: 600px) {
+          .gameboard-root {
+            background-image: url(${fondTableUrl}) !important;
+            background-size: cover !important;
+            background-position: center !important;
+          }
+          .poker-table-bg { display: none !important; }
+          .gameboard-header { padding-top: 18px !important; }
+        }
+      `}</style>
 
       {/* ── Header compact ── */}
-      <div style={{
+      <div className="gameboard-header" style={{
         position: "relative", zIndex: 2,
         display: "flex",
         alignItems: "center",

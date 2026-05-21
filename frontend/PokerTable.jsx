@@ -1,70 +1,45 @@
 import Card from "./Card";
+import tableUrl from "./public/table.png";
 
 
 export default function PokerTable({ trick, playedCards = [], leadSuit, pot, message, myTurn, gameOver }) {
   return (
-    <div style={{
+    <div className="poker-table-outer" style={{
       width: "100%",
       height: "100%",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      perspective: "900px",
-      perspectiveOrigin: "50% 30%",
+      paddingTop: "60px",
     }}>
+      <style>{`
+        .poker-table-wrapper { width: min(1100px, 95vw); }
+        @media (max-width: 600px) {
+          .poker-table-wrapper { width: 530vw; }
+          .poker-table-outer { padding-top: 10px !important; }
+        }
+      `}</style>
 
-      {/* ══ TABLE OVALE BLEUE ══ */}
-      <div style={{
+      {/* ══ TABLE wrapper ══ */}
+      <div className="poker-table-wrapper" style={{
         position: "relative",
-        width: "min(300px, 82vw)",
-        height: "min(60vh, 420px)",
-
-        background: `
-          radial-gradient(ellipse at 50% 42%,
-            #1a5fc4 0%,
-            #0d3e8a 35%,
-            #071f50 70%,
-            #04122e 100%
-          )
-        `,
-
-        borderRadius: "50%",
-        border: "3px solid #0a2464",
-        outline: "1px solid #2060b8",
-        outlineOffset: "2px",
-
-        boxShadow: `
-          0 0 0 6px #04122e,
-          0 0 40px rgba(16,80,200,0.5),
-          0 0 80px rgba(16,80,200,0.2),
-          inset 0 0 70px rgba(0,0,40,0.6),
-          inset 0 2px 12px rgba(80,140,255,0.15)
-        `,
-
-        transform: "rotateX(12deg)",
-        transformOrigin: "50% 100%",
-
+        width: "min(1100px, 95vw)",
+        aspectRatio: "1.6 / 1",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden",
       }}>
 
-        {/* Texture feltée */}
-        <div style={{
-          position: "absolute", inset: 0, borderRadius: "50%", pointerEvents: "none",
-          background: `repeating-linear-gradient(
-            45deg,
-            transparent, transparent 18px,
-            rgba(255,255,255,0.012) 18px, rgba(255,255,255,0.012) 19px
-          )`,
-        }} />
-
-        {/* Anneau intérieur décoratif */}
-        <div style={{
-          position: "absolute", inset: "8%", borderRadius: "50%",
-          border: "1px solid rgba(80,140,255,0.15)", pointerEvents: "none",
+        {/* Image de la table — seule elle pivote sur mobile */}
+        <div className="poker-table-bg" style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${tableUrl})`,
+          backgroundSize: "contain",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          zIndex: 0,
         }} />
 
         {/* ── CENTRE : POT + CARTES JOUÉES ── */}
