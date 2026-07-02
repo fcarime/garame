@@ -27,7 +27,7 @@ function loadLocalGame() {
   try { return JSON.parse(sessionStorage.getItem(LOCAL_GAME_KEY) || "null"); } catch { return null; }
 }
 
-export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false }) {
+export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false, aiName = null, aiAvatarId = null }) {
   const isLocalGame = gameMode === "ia" || gameMode === "multiplayer";
   // Restaure la partie uniquement si ce montage fait suite à un rafraîchissement (resumed)
   const savedGame = resumed && isLocalGame ? loadLocalGame() : null;
@@ -39,7 +39,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       if (gameMode === "online") {
         return idx === myIndex ? (localPseudo || `Joueur ${idx + 1}`) : (remotePseudo || `Joueur ${idx === 0 ? 1 : 2}`);
       }
-      if (gameMode === "ia") return idx === 0 ? (localPseudo || "Joueur 1") : "IA";
+      if (gameMode === "ia") return idx === 0 ? (localPseudo || "Joueur 1") : (aiName || "IA");
       return idx === 0 ? "Joueur 1" : "Joueur 2";
     };
     return [
@@ -548,7 +548,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const opponentIndex = gameMode === "online" ? 1 - myIndex : 1;
 
   const opponentAvatarId = players[opponentIndex].isAI
-    ? DEFAULT_AVATARS.ai
+    ? (aiAvatarId ?? DEFAULT_AVATARS.ai)
     : playerAvatars[opponentIndex];
 
   return (

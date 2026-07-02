@@ -4,6 +4,7 @@ import Home from "./Home";
 import OnlineLobby from "./OnlineLobby";
 import Profile from "./Profile";
 import Auth from "./Auth";
+import Matchmaking from "./Matchmaking";
 import { getSocket } from "./OnlineLobby";
 import "./App.css";
 
@@ -37,6 +38,8 @@ export default function App() {
     }
     return null;
   }); // { socket, myIndex, roomCode, remotePseudo }
+  // Adversaire fictif du mode "Sans mise" (l'IA affichée sous un faux nom)
+  const [aiOpponent, setAiOpponent] = useState(savedNav?.aiOpponent ?? null);
   const [localPseudo, setLocalPseudo] = useState(auth?.pseudo ?? "");
   const [bankroll, setBankroll] = useState(auth?.bankroll ?? 100000);
 
@@ -63,8 +66,9 @@ export default function App() {
         remotePseudo: onlineData.remotePseudo,
       };
     }
+    if (gameMode === "ia" && aiOpponent) snap.aiOpponent = aiOpponent;
     try { sessionStorage.setItem(NAV_KEY, JSON.stringify(snap)); } catch {}
-  }, [screen, gameMode, onlineData, playerAvatars]);
+  }, [screen, gameMode, onlineData, playerAvatars, aiOpponent]);
 
   // Reprise online impossible (salle expirée / serveur redémarré) → retour accueil
   useEffect(() => {
@@ -101,11 +105,24 @@ export default function App() {
     if (mode === "online") {
       setScreen("onlineLobby");
       setGameMode("online");
+    } else if (mode === "ia") {
+      // "Sans mise" : recherche d'un adversaire (factice) avant la partie
+      setAiOpponent(null);
+      setScreen("matchmaking");
     } else {
       setGameMode(mode);
       setGameKey(prev => prev + 1);
       setScreen("game");
     }
+  };
+
+  // Adversaire "trouvé" → lance la partie IA sous le faux nom
+  const handleMatchFound = (opponent) => {
+    setAiOpponent(opponent);
+    setResumeGame(false);
+    setGameMode("ia");
+    setGameKey(prev => prev + 1);
+    setScreen("game");
   };
 
   const handleOnlineGameStart = (socket, myIndex, roomCode, remotePseudo) => {
@@ -121,6 +138,7 @@ export default function App() {
     setScreen("home");
     setGameMode(null);
     setOnlineData(null);
+    setAiOpponent(null);
   };
 
   return (
@@ -138,6 +156,14 @@ export default function App() {
       )}
       {screen === "profile" && (
         <Profile onBack={() => setScreen("home")} avatarId={playerAvatars[0]} bankroll={bankroll} onLogout={handleLogout} />
+      )}
+      {screen === "matchmaking" && (
+        <Matchmaking
+          pseudo={localPseudo}
+          myAvatarId={playerAvatars[0]}
+          onMatchFound={handleMatchFound}
+          onCancel={() => setScreen("home")}
+        />
       )}
       {screen === "onlineLobby" && (
         <OnlineLobby
@@ -159,6 +185,8 @@ export default function App() {
           initialBankroll={bankroll}
           playerAvatars={playerAvatars}
           resumed={resumeGame}
+          aiName={aiOpponent?.name ?? null}
+          aiAvatarId={aiOpponent?.avatarId ?? null}
         />
       )}
     </div>
