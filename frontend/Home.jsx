@@ -170,46 +170,31 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
           letterSpacing: "2px", textTransform: "uppercase",
           marginBottom: "12px", textAlign: "center",
         }}>
-          CHOISIR VOS AVATARS
+          CHOISIR VOTRE AVATAR
         </div>
 
-        {[{ label: "JOUEUR 1", playerIdx: 0 }, { label: "JOUEUR 2", playerIdx: 1 }].map(({ label, playerIdx }) => (
-          <div key={playerIdx} style={{ marginBottom: playerIdx === 0 ? "12px" : 0 }}>
-            <div style={{
-              fontSize: "9px", fontWeight: "700", color: "rgba(255,255,255,0.3)",
-              letterSpacing: "2px", textTransform: "uppercase", marginBottom: "8px",
-            }}>
-              {label}
-            </div>
-            <div style={{ display: "flex", gap: "clamp(4px, 1.2vw, 8px)", flexWrap: "wrap" }}>
-              {AVATARS.map(avatar => {
-                const isSelected = selectedAvatars[playerIdx] === avatar.id;
-                const isUsed = selectedAvatars[1 - playerIdx] === avatar.id;
-                const size = Math.min(Math.max(Math.floor(window.innerWidth * 0.07), 28), 38);
-                return (
-                  <div
-                    key={avatar.id}
-                    title={avatar.name}
-                    onClick={() => {
-                      if (isUsed) return;
-                      setSelectedAvatars(prev => { const n=[...prev]; n[playerIdx]=avatar.id; return n; });
-                    }}
-                    style={{
-                      ...getAvatarStyle(avatar.id, size),
-                      cursor: isUsed ? "not-allowed" : "pointer",
-                      outline: isSelected ? "2px solid #00D9FF" : "2px solid transparent",
-                      outlineOffset: "2px",
-                      opacity: isUsed ? 0.25 : 1,
-                      boxShadow: isSelected ? "0 0 10px rgba(0,217,255,0.5)" : "none",
-                      touchAction: "manipulation",
-                      WebkitTapHighlightColor: "transparent",
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        ))}
+        <div style={{ display: "flex", gap: "clamp(4px, 1.2vw, 8px)", flexWrap: "wrap", justifyContent: "center" }}>
+          {AVATARS.map(avatar => {
+            const isSelected = selectedAvatars[0] === avatar.id;
+            const size = Math.min(Math.max(Math.floor(window.innerWidth * 0.07), 28), 38);
+            return (
+              <div
+                key={avatar.id}
+                title={avatar.name}
+                onClick={() => setSelectedAvatars(prev => { const n = [...prev]; n[0] = avatar.id; return n; })}
+                style={{
+                  ...getAvatarStyle(avatar.id, size),
+                  cursor: "pointer",
+                  outline: isSelected ? "2px solid #00D9FF" : "2px solid transparent",
+                  outlineOffset: "2px",
+                  boxShadow: isSelected ? "0 0 10px rgba(0,217,255,0.5)" : "none",
+                  touchAction: "manipulation",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
 
       {/* Règles */}
