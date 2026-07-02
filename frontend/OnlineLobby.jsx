@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 
 let socketInstance = null;
 
-function getSocket() {
+export function getSocket() {
   if (!socketInstance) {
     const serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
     socketInstance = io(serverUrl, { autoConnect: true });

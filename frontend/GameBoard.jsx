@@ -20,7 +20,7 @@ import {
 
 const INITIAL_POT = 1000;
 
-export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000 }) {
+export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false }) {
   const [bgIndex] = useState(() => Math.floor(Math.random() * 12));
   const accent = BG_ACCENT[bgIndex];
   const [gameState, setGameState] = useState("setup");
@@ -53,7 +53,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const [pendingOpponentCard, setPendingOpponentCard] = useState(null);
   const [specialWinInfo, setSpecialWinInfo] = useState(null);
   const [roundWinInfo, setRoundWinInfo] = useState(null); // { winner, hasBonusWin, lastCard }
-  const [reconnecting, setReconnecting] = useState(false);
+  const [reconnecting, setReconnecting] = useState(resumed && gameMode === "online");
   const [opponentReconnecting, setOpponentReconnecting] = useState(0);
   const [opponentLeft, setOpponentLeft] = useState(false);
   const [exportInfo, setExportInfo] = useState(null); // { winner } — 33 Export
@@ -188,8 +188,9 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     });
 
     socket.on("rejoined", () => {
-      setReconnecting(false);
-      if (myIndex !== 0) socket.emit("requestGameState", { roomCode });
+      // Demande l'état courant à l'autre joueur (chacun détient un miroir complet),
+      // ce qui permet aussi à l'hôte de récupérer après un rafraîchissement de page.
+      socket.emit("requestGameState", { roomCode });
     });
 
     socket.on("gameStateSyncRequest", () => {
@@ -241,6 +242,10 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     };
     socket.on("disconnect", onSocketDisconnect);
     socket.on("connect", onSocketReconnect);
+
+    // Reprise après refresh : si le socket est déjà connecté au montage, on
+    // rejoint immédiatement la salle (sinon l'événement "connect" ci-dessus s'en charge).
+    if (resumed && socket.connected) onSocketReconnect();
 
     socket.on("bankrollUpdated", (bankrolls) => {
       const myName = players[myIndex].name;

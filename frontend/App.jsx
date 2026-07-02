@@ -4,19 +4,39 @@ import Home from "./Home";
 import OnlineLobby from "./OnlineLobby";
 import Profile from "./Profile";
 import Auth from "./Auth";
+import { getSocket } from "./OnlineLobby";
 import "./App.css";
 
 function loadAuth() {
   try { return JSON.parse(localStorage.getItem("garame_auth") || "null"); } catch { return null; }
 }
 
+// Navigation persistée (par onglet) pour survivre à un rafraîchissement de page
+const NAV_KEY = "garame_nav";
+function loadNav() {
+  try { return JSON.parse(sessionStorage.getItem(NAV_KEY) || "null"); } catch { return null; }
+}
+function clearNav() {
+  try { sessionStorage.removeItem(NAV_KEY); } catch {}
+}
+
 export default function App() {
   const auth = loadAuth();
-  const [screen, setScreen] = useState(auth ? "home" : "auth"); // "auth" | "home" | "onlineLobby" | "game" | "profile"
-  const [gameMode, setGameMode] = useState(null);
+  const savedNav = auth ? loadNav() : null;
+  const [screen, setScreen] = useState(() => (auth ? (savedNav?.screen ?? "home") : "auth")); // "auth" | "home" | "onlineLobby" | "game" | "profile"
+  const [gameMode, setGameMode] = useState(savedNav?.gameMode ?? null);
   const [gameKey, setGameKey] = useState(0);
-  const [onlineData, setOnlineData] = useState(null); // { socket, myIndex, roomCode, remotePseudo }
-  const [playerAvatars, setPlayerAvatars] = useState([0, 6]); // [p1Id, p2Id]
+  const [playerAvatars, setPlayerAvatars] = useState(savedNav?.playerAvatars ?? [0, 6]); // [p1Id, p2Id]
+  // Vrai uniquement au tout premier montage après un refresh en pleine partie
+  const [resumeGame, setResumeGame] = useState(() => savedNav?.screen === "game");
+  const [onlineData, setOnlineData] = useState(() => {
+    // Reprise d'une partie online après refresh : on recrée le socket, GameBoard rejoint la salle
+    if (savedNav?.screen === "game" && savedNav?.gameMode === "online" && savedNav?.online) {
+      const { roomCode, myIndex, remotePseudo } = savedNav.online;
+      return { socket: getSocket(), myIndex, roomCode, remotePseudo };
+    }
+    return null;
+  }); // { socket, myIndex, roomCode, remotePseudo }
   const [localPseudo, setLocalPseudo] = useState(auth?.pseudo ?? "");
   const [bankroll, setBankroll] = useState(auth?.bankroll ?? 100000);
 
@@ -32,6 +52,34 @@ export default function App() {
     if (localPseudo) fetchBankroll(localPseudo);
   }, []);
 
+  // Sauvegarde la navigation courante à chaque changement (pour le refresh)
+  useEffect(() => {
+    if (screen === "auth") { clearNav(); return; }
+    const snap = { screen, gameMode, playerAvatars };
+    if (gameMode === "online" && onlineData) {
+      snap.online = {
+        roomCode: onlineData.roomCode,
+        myIndex: onlineData.myIndex,
+        remotePseudo: onlineData.remotePseudo,
+      };
+    }
+    try { sessionStorage.setItem(NAV_KEY, JSON.stringify(snap)); } catch {}
+  }, [screen, gameMode, onlineData, playerAvatars]);
+
+  // Reprise online impossible (salle expirée / serveur redémarré) → retour accueil
+  useEffect(() => {
+    const socket = onlineData?.socket;
+    if (!socket) return;
+    const onRejoinError = () => {
+      setScreen("home");
+      setGameMode(null);
+      setOnlineData(null);
+      setResumeGame(false);
+    };
+    socket.on("rejoinError", onRejoinError);
+    return () => socket.off("rejoinError", onRejoinError);
+  }, [onlineData]);
+
   const handleAuthSuccess = ({ pseudo, bankroll: br }) => {
     setLocalPseudo(pseudo);
     setBankroll(br);
@@ -40,6 +88,8 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("garame_auth");
+    clearNav();
+    setResumeGame(false);
     setLocalPseudo("");
     setBankroll(100000);
     setScreen("auth");
@@ -47,6 +97,7 @@ export default function App() {
 
   const handleStartGame = (mode, avatars) => {
     if (avatars) setPlayerAvatars(avatars);
+    setResumeGame(false);
     if (mode === "online") {
       setScreen("onlineLobby");
       setGameMode("online");
@@ -58,6 +109,7 @@ export default function App() {
   };
 
   const handleOnlineGameStart = (socket, myIndex, roomCode, remotePseudo) => {
+    setResumeGame(false);
     setOnlineData({ socket, myIndex, roomCode, remotePseudo });
     setGameKey(prev => prev + 1);
     setScreen("game");
@@ -65,6 +117,7 @@ export default function App() {
 
   const handleBackToHome = () => {
     fetchBankroll(localPseudo);
+    setResumeGame(false);
     setScreen("home");
     setGameMode(null);
     setOnlineData(null);
@@ -105,6 +158,7 @@ export default function App() {
           localPseudo={localPseudo}
           initialBankroll={bankroll}
           playerAvatars={playerAvatars}
+          resumed={resumeGame}
         />
       )}
     </div>
