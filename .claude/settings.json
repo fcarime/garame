@@ -6,7 +6,17 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(Remove-Item \"c:\\\\Users\\\\carime\\\\Music\\\\garame\\\\frontend\\\\PlayerWaitScreen.jsx\")"
+      "Bash(Remove-Item \"c:\\\\Users\\\\carime\\\\Music\\\\garame\\\\frontend\\\\PlayerWaitScreen.jsx\")",
+      "Bash(git commit -m 'fix: server.cjs pour compatibilité type:module ESM *)",
+      "Bash(npm -v)",
+      "Bash(node -e \"console.log\\(process.platform, process.arch\\)\")",
+      "Bash(node -e \"const {DatabaseSync}=require\\('node:sqlite'\\); const db=new DatabaseSync\\(':memory:'\\); db.exec\\('CREATE TABLE t\\(x\\)'\\); db.prepare\\('INSERT INTO t VALUES \\(?\\)'\\).run\\(42\\); console.log\\('OK', db.prepare\\('SELECT x FROM t'\\).get\\(\\)\\);\")",
+      "Read(//tmp/**)",
+      "Bash(cd \"c:/Users/carime/Music/garame\" && rm -f backend/garame.db backend/garame.db-* && git status --short)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\carime\\Music\\garame\\backend"
     ]
   }
 }
