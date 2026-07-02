@@ -6,7 +6,7 @@ import CardBack from "./CardBack";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
-import fondTableUrl from "./public/fond_table.png";
+import fondTableUrl from "./public/fond_table_mobile.png";
 import {
   createDeck,
   dealCards,
