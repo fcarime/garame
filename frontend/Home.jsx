@@ -173,7 +173,7 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
           CHOISIR VOTRE AVATAR
         </div>
 
-        <div style={{ display: "flex", gap: "clamp(4px, 1.2vw, 8px)", flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "clamp(4px, 1.2vw, 8px)", justifyItems: "center", alignItems: "center" }}>
           {AVATARS.map(avatar => {
             const isSelected = selectedAvatars[0] === avatar.id;
             const size = Math.min(Math.max(Math.floor(window.innerWidth * 0.07), 28), 38);

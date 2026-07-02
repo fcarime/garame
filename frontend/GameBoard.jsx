@@ -20,10 +20,20 @@ import {
 
 const INITIAL_POT = 1000;
 
+// Sauvegarde de la partie locale (IA / hot-seat) pour survivre à un refresh.
+// L'online, lui, se resynchronise via le socket (voir rejoinRoom/gameStateSync).
+const LOCAL_GAME_KEY = "garame_game";
+function loadLocalGame() {
+  try { return JSON.parse(sessionStorage.getItem(LOCAL_GAME_KEY) || "null"); } catch { return null; }
+}
+
 export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false }) {
-  const [bgIndex] = useState(() => Math.floor(Math.random() * 12));
+  const isLocalGame = gameMode === "ia" || gameMode === "multiplayer";
+  // Restaure la partie uniquement si ce montage fait suite à un rafraîchissement (resumed)
+  const savedGame = resumed && isLocalGame ? loadLocalGame() : null;
+  const [bgIndex] = useState(() => savedGame?.bgIndex ?? Math.floor(Math.random() * 12));
   const accent = BG_ACCENT[bgIndex];
-  const [gameState, setGameState] = useState("setup");
+  const [gameState, setGameState] = useState(savedGame?.gameState ?? "setup");
   const [players] = useState(() => {
     const getName = (idx) => {
       if (gameMode === "online") {
@@ -37,27 +47,27 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       { id: 1, name: getName(1), isAI: gameMode === "ia" },
     ];
   });
-  const [myBankroll, setMyBankroll] = useState(initialBankroll);
-  const [playedCards, setPlayedCards] = useState([]);
-  const [hands, setHands] = useState([[], []]);
-  const [pot, setPot] = useState(0);
-  const [scores, setScores] = useState([0, 0]);
-  const [currentRound, setCurrentRound] = useState(1);
-  const [trick, setTrick] = useState([]);
-  const [leadSuit, setLeadSuit] = useState(null);
-  const [currentPlayer, setCurrentPlayer] = useState(0);
-  const [roundStarter, setRoundStarter] = useState(0);
-  const [message, setMessage] = useState("");
-  const [gameOver, setGameOver] = useState(false);
+  const [myBankroll, setMyBankroll] = useState(savedGame?.myBankroll ?? initialBankroll);
+  const [playedCards, setPlayedCards] = useState(savedGame?.playedCards ?? []);
+  const [hands, setHands] = useState(savedGame?.hands ?? [[], []]);
+  const [pot, setPot] = useState(savedGame?.pot ?? 0);
+  const [scores, setScores] = useState(savedGame?.scores ?? [0, 0]);
+  const [currentRound, setCurrentRound] = useState(savedGame?.currentRound ?? 1);
+  const [trick, setTrick] = useState(savedGame?.trick ?? []);
+  const [leadSuit, setLeadSuit] = useState(savedGame?.leadSuit ?? null);
+  const [currentPlayer, setCurrentPlayer] = useState(savedGame?.currentPlayer ?? 0);
+  const [roundStarter, setRoundStarter] = useState(savedGame?.roundStarter ?? 0);
+  const [message, setMessage] = useState(savedGame?.message ?? "");
+  const [gameOver, setGameOver] = useState(savedGame?.gameOver ?? false);
   const [validCards, setValidCards] = useState([]);
   const [pendingOpponentCard, setPendingOpponentCard] = useState(null);
-  const [specialWinInfo, setSpecialWinInfo] = useState(null);
-  const [roundWinInfo, setRoundWinInfo] = useState(null); // { winner, hasBonusWin, lastCard }
+  const [specialWinInfo, setSpecialWinInfo] = useState(savedGame?.specialWinInfo ?? null);
+  const [roundWinInfo, setRoundWinInfo] = useState(savedGame?.roundWinInfo ?? null); // { winner, hasBonusWin, lastCard }
   const [reconnecting, setReconnecting] = useState(resumed && gameMode === "online");
   const [opponentReconnecting, setOpponentReconnecting] = useState(0);
   const [opponentLeft, setOpponentLeft] = useState(false);
-  const [exportInfo, setExportInfo] = useState(null); // { winner } — 33 Export
-  const penultimateCardsRef = useRef([null, null]); // 4ème carte jouée par chaque joueur
+  const [exportInfo, setExportInfo] = useState(savedGame?.exportInfo ?? null); // { winner } — 33 Export
+  const penultimateCardsRef = useRef(savedGame?.penult ?? [null, null]); // 4ème carte jouée par chaque joueur
 
   const startRound = () => {
     if (gameMode === "online" && myIndex !== 0) return;
@@ -125,6 +135,21 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       setValidCards(playableCards);
     }
   }, [currentPlayer, leadSuit, gameState, hands, trick, gameMode, myIndex]);
+
+  // Persiste la partie locale à chaque changement (reprise après rafraîchissement)
+  useEffect(() => {
+    if (!isLocalGame) return;
+    try {
+      sessionStorage.setItem(LOCAL_GAME_KEY, JSON.stringify({
+        gameState, hands, pot, scores, currentRound, trick, leadSuit,
+        currentPlayer, roundStarter, message, gameOver, playedCards,
+        specialWinInfo, roundWinInfo, exportInfo, myBankroll, bgIndex,
+        penult: penultimateCardsRef.current,
+      }));
+    } catch {}
+  }, [isLocalGame, gameState, hands, pot, scores, currentRound, trick, leadSuit,
+      currentPlayer, roundStarter, message, gameOver, playedCards,
+      specialWinInfo, roundWinInfo, exportInfo, myBankroll, bgIndex]);
 
   // Écoute des événements socket en mode online
   useEffect(() => {
