@@ -61,12 +61,12 @@ export default function Card({ value, suit, onClick, disabled = false }) {
         </div>
       </div>
 
-      {/* Center suit — centré sur le milieu exact de la carte (mobile + PC) */}
+      {/* Center suit — légèrement sous le centre (le haut de la fleur ~ bas de la fleur du coin) */}
       <div style={{
         position: "absolute",
         top: "50%",
         left: "50%",
-        transform: "translate(-50%, -50%)",
+        transform: "translate(-50%, calc(-50% + clamp(6px, 2vw, 12px)))",
         fontSize: "clamp(30px, 7.5vw, 46px)",
         color: suitColor,
         lineHeight: 1,
