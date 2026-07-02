@@ -53,10 +53,10 @@ export default function Card({ value, suit, onClick, disabled = false }) {
     >
       {/* Top-left corner */}
       <div style={{ lineHeight: 1, textAlign: "left" }}>
-        <div style={{ fontSize: "clamp(10px, 2.8vw, 14px)", fontWeight: "900", color: suitColor, lineHeight: 1 }}>
+        <div style={{ fontSize: "clamp(16px, 4.4vw, 24px)", fontWeight: "900", color: suitColor, lineHeight: 1 }}>
           {value}
         </div>
-        <div style={{ fontSize: "clamp(8px, 2.2vw, 11px)", color: suitColor, lineHeight: 1, marginTop: "1px" }}>
+        <div style={{ fontSize: "clamp(13px, 3.6vw, 19px)", color: suitColor, lineHeight: 1, marginTop: "2px" }}>
           {suit}
         </div>
       </div>
@@ -67,21 +67,11 @@ export default function Card({ value, suit, onClick, disabled = false }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "clamp(22px, 5.5vw, 34px)",
+        fontSize: "clamp(30px, 7.5vw, 46px)",
         color: suitColor,
         lineHeight: 1,
       }}>
         {suit}
-      </div>
-
-      {/* Bottom-right corner (rotated) */}
-      <div style={{ lineHeight: 1, textAlign: "right", transform: "rotate(180deg)" }}>
-        <div style={{ fontSize: "clamp(10px, 2.8vw, 14px)", fontWeight: "900", color: suitColor, lineHeight: 1 }}>
-          {value}
-        </div>
-        <div style={{ fontSize: "clamp(8px, 2.2vw, 11px)", color: suitColor, lineHeight: 1, marginTop: "1px" }}>
-          {suit}
-        </div>
       </div>
     </div>
   );
