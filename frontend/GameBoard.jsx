@@ -826,7 +826,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             <div style={{ fontSize: "12px", fontWeight: "800", color: "#4ade80" }}>
               {myScore}<span style={{ fontSize: "8px", color: "rgba(255,255,255,0.35)", marginLeft: "2px" }}>/3</span>
             </div>
-            {gameMode === "online" && (
+            {(gameMode === "online" || gameMode === "ia") && (
               <div style={{ fontSize: "9px", color: "#F59E0B", fontWeight: "700", marginTop: "1px" }}>
                 {myBankroll.toLocaleString("fr-FR")} FCFA
               </div>
@@ -1274,7 +1274,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
               }}>
                 {scores[myIndex] >= scores[opponentIndex] ? "+2 000" : "-2 000"} FCFA
               </div>
-              {gameMode === "online" && (
+              {(gameMode === "online" || gameMode === "ia") && (
                 <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>
                   Bankroll : <span style={{ color: "#F59E0B", fontWeight: "700" }}>{myBankroll.toLocaleString("fr-FR")} FCFA</span>
                 </div>
