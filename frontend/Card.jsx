@@ -67,6 +67,7 @@ export default function Card({ value, suit, onClick, disabled = false }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        paddingBottom: "clamp(8px, 2.5vw, 14px)",
         fontSize: "clamp(30px, 7.5vw, 46px)",
         color: suitColor,
         lineHeight: 1,
