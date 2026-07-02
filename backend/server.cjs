@@ -2,6 +2,8 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const bcrypt = require("bcryptjs");
+const db = require("./db.cjs");
 
 const app = express();
 const server = http.createServer(app);
@@ -11,35 +13,56 @@ const io = new Server(server, {
 
 app.use(express.json());
 
-// ── Base utilisateurs en mémoire ──────────────────────────────────────────
-// Clé : pseudo (string), valeur : { pseudo, bankroll, gamesPlayed, gamesWon }
-const users = new Map();
+// ── Base utilisateurs : persistée dans SQLite (backend/db.cjs) ──────────────
+const getUser = db.getUser;
 
-function getUser(pseudo) {
-  if (!pseudo) return null;
-  const key = pseudo.trim().toLowerCase();
-  if (!users.has(key)) {
-    users.set(key, { pseudo: pseudo.trim(), bankroll: 100000, gamesPlayed: 0, gamesWon: 0 });
-  }
-  return users.get(key);
+// Projection publique : on n'expose jamais le passwordHash au client
+function publicUser(user) {
+  if (!user) return user;
+  const { passwordHash, ...safe } = user;
+  return safe;
 }
 
-// ── REST API utilisateurs ─────────────────────────────────────────────────
+// ── REST API Auth ──────────────────────────────────────────────────────────
+app.post("/api/register", async (req, res) => {
+  const { pseudo, password } = req.body;
+  if (!pseudo || !password) return res.status(400).json({ error: "Pseudo et mot de passe requis" });
+  if (db.hasAccount(pseudo)) {
+    return res.status(409).json({ error: "Ce pseudo est déjà pris" });
+  }
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = db.createUser(pseudo, passwordHash);
+  res.json({ success: true, pseudo: user.pseudo, bankroll: user.bankroll });
+});
+
+app.post("/api/login", async (req, res) => {
+  const { pseudo, password } = req.body;
+  if (!pseudo || !password) return res.status(400).json({ error: "Pseudo et mot de passe requis" });
+  const user = db.findUser(pseudo);
+  if (!user || !user.passwordHash) return res.status(401).json({ error: "Compte introuvable" });
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) return res.status(401).json({ error: "Mot de passe incorrect" });
+  res.json({ success: true, pseudo: user.pseudo, bankroll: user.bankroll, gamesPlayed: user.gamesPlayed, gamesWon: user.gamesWon });
+});
+
+// ── REST API utilisateurs ──────────────────────────────────────────────────
 app.get("/api/user/:pseudo", (req, res) => {
   const user = getUser(req.params.pseudo);
   if (!user) return res.status(400).json({ error: "pseudo requis" });
-  res.json(user);
+  res.json(publicUser(user));
 });
 
 // Synchronisation bankroll depuis localStorage client (si serveur redémarre)
 app.post("/api/user/sync", (req, res) => {
   const { pseudo, bankroll } = req.body;
   if (!pseudo) return res.status(400).json({ error: "pseudo requis" });
-  const key = pseudo.trim().toLowerCase();
-  if (!users.has(key)) {
-    users.set(key, { pseudo: pseudo.trim(), bankroll: bankroll ?? 100000, gamesPlayed: 0, gamesWon: 0 });
+  // Ne crée le compte avec le bankroll client que s'il est inconnu ;
+  // sinon la valeur serveur (persistée) fait autorité.
+  const existing = db.findUser(pseudo);
+  if (!existing) {
+    return res.json(publicUser(db.setBankroll(pseudo, bankroll ?? db.STARTING_BANKROLL)));
   }
-  res.json(users.get(key));
+  res.json(publicUser(existing));
 });
 
 // ── Salles de jeu ─────────────────────────────────────────────────────────
@@ -85,22 +108,15 @@ io.on("connection", (socket) => {
     console.log(`${pseudo} a rejoint la salle ${roomCode}`);
   });
 
-  // Résultat de partie → mise à jour des bankrolls
+  // Résultat de partie → mise à jour des bankrolls (persisté en DB)
   socket.on("gameResult", ({ roomCode, winnerPseudo, loserPseudo }) => {
     if (!winnerPseudo || !loserPseudo) return;
 
-    const winner = getUser(winnerPseudo);
-    const loser  = getUser(loserPseudo);
-
-    winner.bankroll += 2000;
-    winner.gamesWon++;
-    winner.gamesPlayed++;
-    loser.bankroll = Math.max(0, loser.bankroll - 2000);
-    loser.gamesPlayed++;
+    const { winnerBankroll, loserBankroll } = db.applyGameResult(winnerPseudo, loserPseudo, 2000);
 
     io.to(roomCode).emit("bankrollUpdated", {
-      [winnerPseudo]: winner.bankroll,
-      [loserPseudo]:  loser.bankroll,
+      [winnerPseudo]: winnerBankroll,
+      [loserPseudo]:  loserBankroll,
     });
 
     console.log(`Résultat salle ${roomCode} : ${winnerPseudo} +2000 / ${loserPseudo} -2000`);

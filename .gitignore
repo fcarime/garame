@@ -23,3 +23,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# Base de données SQLite (persistance comptes/progression)
+backend/garame.db
+backend/garame.db-*
