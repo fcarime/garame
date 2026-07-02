@@ -139,7 +139,7 @@ function SaveBtn({ onClick, saved }) {
   );
 }
 
-export default function Profile({ onBack, avatarId = 0, bankroll = 100000 }) {
+export default function Profile({ onBack, avatarId = 0, bankroll = 100000, onLogout }) {
   const [profile, setProfile] = useState(initProfile);
   const [savedSection, setSavedSection] = useState(null);
   const [closeConfirm, setCloseConfirm] = useState(false);
@@ -212,6 +212,26 @@ export default function Profile({ onBack, avatarId = 0, bankroll = 100000 }) {
         >
           ←
         </button>
+
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            style={{
+              background: "transparent",
+              border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: "8px",
+              color: "rgba(239,68,68,0.6)",
+              fontSize: "9px", fontWeight: "700",
+              letterSpacing: "1.5px", textTransform: "uppercase",
+              padding: "0 10px", height: "34px",
+              cursor: "pointer",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            DÉCO
+          </button>
+        )}
 
         {/* Avatar */}
         <div style={{

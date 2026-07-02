@@ -3,16 +3,22 @@ import GameBoard from "./GameBoard";
 import Home from "./Home";
 import OnlineLobby from "./OnlineLobby";
 import Profile from "./Profile";
+import Auth from "./Auth";
 import "./App.css";
 
+function loadAuth() {
+  try { return JSON.parse(localStorage.getItem("garame_auth") || "null"); } catch { return null; }
+}
+
 export default function App() {
-  const [screen, setScreen] = useState("home"); // "home" | "onlineLobby" | "game" | "profile"
+  const auth = loadAuth();
+  const [screen, setScreen] = useState(auth ? "home" : "auth"); // "auth" | "home" | "onlineLobby" | "game" | "profile"
   const [gameMode, setGameMode] = useState(null);
   const [gameKey, setGameKey] = useState(0);
   const [onlineData, setOnlineData] = useState(null); // { socket, myIndex, roomCode, remotePseudo }
   const [playerAvatars, setPlayerAvatars] = useState([0, 6]); // [p1Id, p2Id]
-  const [localPseudo, setLocalPseudo] = useState("");
-  const [bankroll, setBankroll] = useState(100000);
+  const [localPseudo, setLocalPseudo] = useState(auth?.pseudo ?? "");
+  const [bankroll, setBankroll] = useState(auth?.bankroll ?? 100000);
 
   const fetchBankroll = (pseudo) => {
     if (!pseudo) return;
@@ -23,14 +29,21 @@ export default function App() {
   };
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("garame_profile") || "{}");
-      if (stored.pseudo) {
-        setLocalPseudo(stored.pseudo);
-        fetchBankroll(stored.pseudo);
-      }
-    } catch {}
+    if (localPseudo) fetchBankroll(localPseudo);
   }, []);
+
+  const handleAuthSuccess = ({ pseudo, bankroll: br }) => {
+    setLocalPseudo(pseudo);
+    setBankroll(br);
+    setScreen("home");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("garame_auth");
+    setLocalPseudo("");
+    setBankroll(100000);
+    setScreen("auth");
+  };
 
   const handleStartGame = (mode, avatars) => {
     if (avatars) setPlayerAvatars(avatars);
@@ -59,6 +72,9 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a" }}>
+      {screen === "auth" && (
+        <Auth onAuthSuccess={handleAuthSuccess} />
+      )}
       {screen === "home" && (
         <Home
           onStartGame={handleStartGame}
@@ -68,7 +84,7 @@ export default function App() {
         />
       )}
       {screen === "profile" && (
-        <Profile onBack={() => setScreen("home")} avatarId={playerAvatars[0]} bankroll={bankroll} />
+        <Profile onBack={() => setScreen("home")} avatarId={playerAvatars[0]} bankroll={bankroll} onLogout={handleLogout} />
       )}
       {screen === "onlineLobby" && (
         <OnlineLobby
