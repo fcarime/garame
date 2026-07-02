@@ -5,7 +5,7 @@ import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
-import backgroundUrl from "./public/barckground.png";
+import backgroundUrl from "./public/barckground_game.png";
 import fondTableUrl from "./public/fond_table.png";
 import {
   createDeck,
