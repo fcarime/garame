@@ -13,7 +13,12 @@
       "Bash(node -e \"const {DatabaseSync}=require\\('node:sqlite'\\); const db=new DatabaseSync\\(':memory:'\\); db.exec\\('CREATE TABLE t\\(x\\)'\\); db.prepare\\('INSERT INTO t VALUES \\(?\\)'\\).run\\(42\\); console.log\\('OK', db.prepare\\('SELECT x FROM t'\\).get\\(\\)\\);\")",
       "Read(//tmp/**)",
       "Bash(cd \"c:/Users/carime/Music/garame\" && rm -f backend/garame.db backend/garame.db-* && git status --short)",
-      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -gt \\(Get-Date\\).AddMinutes\\(-5\\) } | ForEach-Object { Stop-Process -Id $_.Id -Force; \"killed $\\($_.Id\\)\" })",
+      "Bash(git hash-object *)",
+      "Bash(echo \"table.png \\(working\\):    $\\(git hash-object frontend/public/table.png\\)  $\\(wc -c < frontend/public/table.png\\) octets\")",
+      "Bash(echo \"table_0.png:            $\\(git hash-object frontend/public/table_0.png\\)  $\\(wc -c < frontend/public/table_0.png\\) octets\")",
+      "Bash(git rm *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\carime\\Music\\garame\\backend"
