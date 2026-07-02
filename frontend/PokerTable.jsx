@@ -109,7 +109,9 @@ export default function PokerTable({ trick, playedCards = [], leadSuit, pot, mes
                     flexShrink: 0,
                   }}>
                     {old.map((p, i) => {
-                      const shift = (old.length - 1 - i) * 13;
+                      // Décalage assez large pour laisser voir le coin (valeur + fleur agrandis)
+                      const step = Math.min(Math.max(window.innerWidth * 0.055, 19), 24);
+                      const shift = (old.length - 1 - i) * step;
                       return (
                         <div key={i} style={{
                           position: "absolute",
