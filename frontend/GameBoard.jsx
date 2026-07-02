@@ -652,6 +652,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
               opacity: opponentActive ? 0.65 : 0.38,
               zIndex: -1,
               pointerEvents: "none",
+              border: "3px solid #000",
+              boxShadow: "inset 0 0 18px 7px rgba(0,0,0,0.5)",
               filter: opponentActive
                 ? "drop-shadow(0 0 18px rgba(0,217,255,0.55))"
                 : "drop-shadow(0 0 8px rgba(0,0,0,0.8))",
@@ -676,7 +678,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                 width: "clamp(24px, 6.5vw, 32px)",
                 height: "clamp(24px, 6.5vw, 32px)",
                 border: opponentActive ? "2px solid #00D9FF" : "2px solid rgba(255,255,255,0.2)",
-                boxShadow: opponentActive ? "0 0 10px rgba(0,217,255,0.5)" : "none",
+                boxShadow: `inset 0 0 0 1.5px rgba(0,0,0,0.85), inset 0 0 6px 3px rgba(0,0,0,0.5)${opponentActive ? ", 0 0 10px rgba(0,217,255,0.5)" : ""}`,
               }} />
               <div>
                 <div style={{ fontSize: "11px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>
@@ -763,6 +765,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           opacity: myTurn ? 0.65 : 0.38,
           zIndex: -1,
           pointerEvents: "none",
+          border: "3px solid #000",
+          boxShadow: "inset 0 0 18px 7px rgba(0,0,0,0.5)",
           filter: myTurn
             ? "drop-shadow(0 0 18px rgba(0,217,255,0.55))"
             : "drop-shadow(0 0 8px rgba(0,0,0,0.8))",
@@ -795,7 +799,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             width: "clamp(26px, 7vw, 34px)",
             height: "clamp(26px, 7vw, 34px)",
             border: myTurn ? "2px solid #00D9FF" : "2px solid rgba(255,255,255,0.15)",
-            boxShadow: myTurn ? "0 0 10px rgba(0,217,255,0.5)" : "none",
+            boxShadow: `inset 0 0 0 1.5px rgba(0,0,0,0.85), inset 0 0 6px 3px rgba(0,0,0,0.5)${myTurn ? ", 0 0 10px rgba(0,217,255,0.5)" : ""}`,
           }} />
           <div>
             <div style={{ fontSize: "11px", fontWeight: "700", color: "#fff", letterSpacing: "0.5px" }}>
