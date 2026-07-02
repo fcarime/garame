@@ -4,8 +4,8 @@ import { AVATARS, getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo = "" }) {
   const [selectedAvatars, setSelectedAvatars] = useState([DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2]);
   const modes = [
-    { key: "ia",     icon: "🔍", label: "SANS MISE",   sub: "Trouver un joueur", color: "#00D9FF", glow: "rgba(0,217,255,0.35)",   border: "rgba(0,217,255,0.5)"   },
-    { key: "online", icon: "🌐", label: "EN LIGNE",    sub: "À distance", color: "#A78BFA", glow: "rgba(167,139,250,0.35)", border: "rgba(167,139,250,0.5)" },
+    { key: "ia",     icon: "🔍", label: "EN LIGNE",    sub: "Trouver un joueur", color: "#00D9FF", glow: "rgba(0,217,255,0.35)",   border: "rgba(0,217,255,0.5)"   },
+    { key: "online", icon: "🌐", label: "AVEC UN AMI", sub: "À distance", color: "#A78BFA", glow: "rgba(167,139,250,0.35)", border: "rgba(167,139,250,0.5)" },
   ];
 
   return (
