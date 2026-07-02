@@ -61,16 +61,16 @@ export default function Card({ value, suit, onClick, disabled = false }) {
         </div>
       </div>
 
-      {/* Center suit */}
+      {/* Center suit — centré sur le milieu exact de la carte (mobile + PC) */}
       <div style={{
-        flex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingBottom: "clamp(8px, 2.5vw, 14px)",
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
         fontSize: "clamp(30px, 7.5vw, 46px)",
         color: suitColor,
         lineHeight: 1,
+        pointerEvents: "none",
       }}>
         {suit}
       </div>
