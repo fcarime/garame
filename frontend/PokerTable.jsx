@@ -1,5 +1,5 @@
 import Card from "./Card";
-import tableUrl from "./public/table_0.png";
+import tableUrl from "./public/table.png";
 
 
 export default function PokerTable({ trick, playedCards = [], leadSuit, pot, message, myTurn, gameOver }) {
