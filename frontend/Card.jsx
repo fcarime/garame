@@ -66,7 +66,7 @@ export default function Card({ value, suit, onClick, disabled = false }) {
         position: "absolute",
         top: "50%",
         left: "50%",
-        transform: "translate(-50%, calc(-50% + clamp(6px, 2vw, 12px)))",
+        transform: "translate(-50%, calc(-50% + clamp(10px, 3vw, 18px)))",
         fontSize: "clamp(30px, 7.5vw, 46px)",
         color: suitColor,
         lineHeight: 1,
