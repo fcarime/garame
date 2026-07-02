@@ -139,10 +139,11 @@ function SaveBtn({ onClick, saved }) {
   );
 }
 
-export default function Profile({ onBack, avatarId = 0, bankroll = 100000, onLogout }) {
+export default function Profile({ onBack, avatarId = 0, bankroll = 100000, onLogout, onResetBankroll }) {
   const [profile, setProfile] = useState(initProfile);
   const [savedSection, setSavedSection] = useState(null);
   const [closeConfirm, setCloseConfirm] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
 
   // sync avatarId from game if provided
   useEffect(() => {
@@ -414,12 +415,61 @@ export default function Profile({ onBack, avatarId = 0, bankroll = 100000, onLog
                 borderRadius: "8px",
                 background: "rgba(245,158,11,0.06)",
                 border: "1px solid rgba(245,158,11,0.25)",
-                display: "flex", alignItems: "baseline", gap: "6px",
+                display: "flex", alignItems: "center", gap: "6px",
               }}>
                 <span style={{ fontSize: "22px", fontWeight: "900", color: "#F59E0B" }}>
                   {bankroll.toLocaleString("fr-FR")}
                 </span>
                 <span style={{ fontSize: "11px", fontWeight: "700", color: "rgba(245,158,11,0.6)" }}>FCFA</span>
+
+                {/* Réinitialiser à 100 000 */}
+                {onResetBankroll && (
+                  <div style={{ marginLeft: "auto", display: "flex", gap: "6px", alignItems: "center" }}>
+                    {!resetConfirm ? (
+                      <button
+                        onClick={() => setResetConfirm(true)}
+                        style={{
+                          padding: "6px 12px", borderRadius: "20px",
+                          border: "1px solid rgba(245,158,11,0.4)",
+                          background: "transparent", color: "rgba(245,158,11,0.85)",
+                          fontSize: "9px", fontWeight: "700",
+                          letterSpacing: "1px", textTransform: "uppercase",
+                          cursor: "pointer", whiteSpace: "nowrap",
+                        }}
+                      >
+                        ↺ Réinitialiser
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => { onResetBankroll(); setResetConfirm(false); }}
+                          style={{
+                            padding: "6px 12px", borderRadius: "20px",
+                            border: "none", background: "#F59E0B", color: "#1a1206",
+                            fontSize: "9px", fontWeight: "800",
+                            letterSpacing: "1px", textTransform: "uppercase",
+                            cursor: "pointer", whiteSpace: "nowrap",
+                          }}
+                        >
+                          Confirmer 100 000
+                        </button>
+                        <button
+                          onClick={() => setResetConfirm(false)}
+                          style={{
+                            padding: "6px 10px", borderRadius: "20px",
+                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: "transparent", color: "rgba(255,255,255,0.5)",
+                            fontSize: "9px", fontWeight: "700",
+                            letterSpacing: "1px", textTransform: "uppercase",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Annuler
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <Field

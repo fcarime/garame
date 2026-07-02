@@ -65,6 +65,16 @@ app.post("/api/user/sync", (req, res) => {
   res.json(publicUser(existing));
 });
 
+// Fixe le solde absolu d'un compte (fin de partie Sans mise, réinitialisation…)
+app.post("/api/user/bankroll", (req, res) => {
+  const { pseudo, bankroll } = req.body;
+  if (!pseudo) return res.status(400).json({ error: "pseudo requis" });
+  const value = Number(bankroll);
+  if (!Number.isFinite(value)) return res.status(400).json({ error: "montant invalide" });
+  const clamped = Math.max(0, Math.min(Math.round(value), 10_000_000));
+  res.json(publicUser(db.setBankroll(pseudo, clamped)));
+});
+
 // ── Salles de jeu ─────────────────────────────────────────────────────────
 const rooms = {};
 

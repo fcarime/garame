@@ -434,6 +434,22 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     playCardLogic(currentPlayer, index);
   };
 
+  // Applique le résultat d'une partie Sans mise (IA) au solde du compte et le persiste
+  const applyLocalResult = (humanWon) => {
+    if (gameMode !== "ia") return;
+    setMyBankroll(prev => {
+      const next = Math.max(0, prev + (humanWon ? 2000 : -2000));
+      if (localPseudo) {
+        fetch("/api/user/bankroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pseudo: localPseudo, bankroll: next }),
+        }).catch(() => {});
+      }
+      return next;
+    });
+  };
+
   const endRound = (winner, lastCard = null, penultCard = null) => {
     const has33Export = lastCard?.value === "3" && penultCard?.value === "3";
     const hasBonusWin = !has33Export && lastCard?.value === "3";
@@ -460,6 +476,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           loserPseudo: players[1 - winner].name,
         });
       }
+      applyLocalResult(winner === 0);
       setTimeout(() => setGameOver(true), 4500);
       return;
     }
@@ -485,6 +502,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           loserPseudo: players[1 - winner].name,
         });
       }
+      applyLocalResult(winner === 0);
       const delay = lastCard ? (hasBonusWin ? 2800 : 1600) : 0;
       setTimeout(() => setGameOver(true), delay);
     } else {

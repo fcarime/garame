@@ -141,6 +141,20 @@ export default function App() {
     setAiOpponent(null);
   };
 
+  // Réinitialise le solde du compte à 100 000 (côté serveur + UI)
+  const handleResetBankroll = () => {
+    setBankroll(100000);
+    if (!localPseudo) return;
+    fetch("/api/user/bankroll", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pseudo: localPseudo, bankroll: 100000 }),
+    })
+      .then(r => r.json())
+      .then(data => { if (typeof data.bankroll === "number") setBankroll(data.bankroll); })
+      .catch(() => {});
+  };
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a" }}>
       {screen === "auth" && (
@@ -155,7 +169,7 @@ export default function App() {
         />
       )}
       {screen === "profile" && (
-        <Profile onBack={() => setScreen("home")} avatarId={playerAvatars[0]} bankroll={bankroll} onLogout={handleLogout} />
+        <Profile onBack={() => setScreen("home")} avatarId={playerAvatars[0]} bankroll={bankroll} onLogout={handleLogout} onResetBankroll={handleResetBankroll} />
       )}
       {screen === "matchmaking" && (
         <Matchmaking
