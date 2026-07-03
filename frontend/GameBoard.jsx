@@ -895,50 +895,91 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
           gap: "16px",
-          animation: "fadeIn 0.3s ease",
+          overflow: "hidden",
+          animation: "fadeIn 0.3s ease, screenShake 0.65s ease 0.05s",
         }}>
-          {/* Particules rouges */}
-          {Array.from({ length: 24 }).map((_, i) => {
-            const angle = (i / 24) * 360;
+          {/* Flash d'impact */}
+          <div style={{
+            position: "absolute", inset: 0, pointerEvents: "none",
+            background: "radial-gradient(circle at 50% 45%, rgba(255,255,255,0.9), rgba(239,68,68,0.25) 40%, transparent 70%)",
+            animation: "flashBang 0.5s ease-out both",
+          }} />
+
+          {/* Rayons lumineux tournants */}
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            width: "160vmax", height: "160vmax", pointerEvents: "none",
+            background: "repeating-conic-gradient(from 0deg, rgba(239,68,68,0.16) 0deg 7deg, transparent 7deg 20deg)",
+            animation: "raysSpin 14s linear infinite",
+            WebkitMaskImage: "radial-gradient(circle, #000 0%, transparent 60%)",
+            maskImage: "radial-gradient(circle, #000 0%, transparent 60%)",
+          }} />
+
+          {/* Ondes de choc */}
+          {[0, 0.5].map((d, i) => (
+            <div key={`sw${i}`} style={{
+              position: "absolute", top: "50%", left: "50%",
+              width: "220px", height: "220px", borderRadius: "50%",
+              border: "3px solid rgba(239,68,68,0.7)", pointerEvents: "none",
+              animation: `shockwave 1.5s ease-out ${d}s infinite`,
+            }} />
+          ))}
+
+          {/* Halo rouge */}
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "460px", height: "460px", pointerEvents: "none",
+            background: "radial-gradient(circle, rgba(239,68,68,0.35) 0%, transparent 65%)",
+            animation: "haloPulse 1.8s ease-in-out infinite",
+          }} />
+
+          {/* Confettis qui tombent */}
+          {Array.from({ length: 34 }).map((_, i) => {
+            const colors = ["#ef4444", "#FCD34D", "#fff", "#f97316"];
+            return (
+              <div key={`cf${i}`} style={{
+                position: "absolute", top: "-6vh",
+                left: `${(i * 2.9 + (i % 5) * 3) % 100}%`,
+                width: i % 2 ? "7px" : "9px",
+                height: i % 2 ? "12px" : "9px",
+                background: colors[i % colors.length],
+                borderRadius: i % 3 ? "2px" : "50%",
+                pointerEvents: "none",
+                animation: `confettiFall ${2.6 + (i % 4) * 0.4}s linear ${(i % 7) * 0.15}s infinite`,
+              }} />
+            );
+          })}
+
+          {/* Particules (explosion) */}
+          {Array.from({ length: 40 }).map((_, i) => {
+            const angle = (i / 40) * 360;
+            const c = i % 3 === 0 ? "#ef4444" : i % 3 === 1 ? "#FCD34D" : "#fff";
             return (
               <div key={i} style={{
-                position: "absolute",
-                top: "50%", left: "50%",
-                width: "6px", height: "6px",
-                borderRadius: "50%",
-                background: i % 3 === 0 ? "#ef4444" : i % 3 === 1 ? "#FCD34D" : "#fff",
-                boxShadow: `0 0 10px ${i % 3 === 0 ? "#ef4444" : "#FCD34D"}`,
-                animation: `sparkleBurst 2s ease-out ${i * 0.06}s both`,
+                position: "absolute", top: "50%", left: "50%",
+                width: "8px", height: "8px", borderRadius: "50%",
+                background: c,
+                boxShadow: `0 0 14px ${c}`,
+                animation: `sparkleBurst 2s ease-out ${i * 0.04}s both`,
                 "--rot": `${angle}deg`,
                 pointerEvents: "none",
               }} />
             );
           })}
 
-          {/* Halo rouge */}
-          <div style={{
-            position: "absolute",
-            top: "50%", left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "400px", height: "400px",
-            background: "radial-gradient(circle, rgba(239,68,68,0.3) 0%, transparent 65%)",
-            pointerEvents: "none",
-            animation: "haloPulse 1.8s ease-in-out infinite",
-          }} />
-
           {/* Texte 33 EXPORT */}
           <div style={{
             position: "relative",
-            fontSize: "clamp(52px, 15vw, 100px)",
+            fontSize: "clamp(58px, 17vw, 120px)",
             fontWeight: "900",
             letterSpacing: "6px",
             background: "linear-gradient(180deg, #fff 0%, #fca5a5 40%, #ef4444 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-            filter: "drop-shadow(0 4px 24px rgba(239,68,68,0.8))",
             lineHeight: 1,
-            animation: "corraPop 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+            animation: "bigZoom 0.7s cubic-bezier(0.34,1.56,0.64,1), glowRed 1.6s ease-in-out 0.7s infinite",
           }}>
             33 EXPORT
           </div>
@@ -1075,26 +1116,72 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
               backdropFilter: "blur(3px)",
               display: "flex", alignItems: "center", justifyContent: "center",
               zIndex: 1100,
-              animation: "fadeIn 0.25s ease",
+              overflow: "hidden",
+              animation: isCorra ? "fadeIn 0.25s ease, screenShake 0.6s ease 0.05s" : "fadeIn 0.25s ease",
               // Non-bloquant : la manche suivante peut commencer sans gêne
               pointerEvents: "none",
             }}
           >
-            {/* Particules dorées pour la CORRA */}
+            {/* Effets dorés pour la CORRA */}
             {isCorra && (
               <>
-                {[...Array(18)].map((_, i) => {
-                  const angle = (i * 360) / 18;
+                {/* Flash */}
+                <div style={{
+                  position: "absolute", inset: 0, pointerEvents: "none",
+                  background: "radial-gradient(circle at 50% 50%, rgba(255,247,200,0.85), rgba(251,191,36,0.22) 42%, transparent 70%)",
+                  animation: "flashBang 0.55s ease-out both",
+                }} />
+
+                {/* Rayons dorés tournants */}
+                <div style={{
+                  position: "absolute", top: "50%", left: "50%",
+                  width: "160vmax", height: "160vmax", pointerEvents: "none",
+                  background: "repeating-conic-gradient(from 0deg, rgba(251,191,36,0.16) 0deg 7deg, transparent 7deg 20deg)",
+                  animation: "raysSpin 16s linear infinite",
+                  WebkitMaskImage: "radial-gradient(circle, #000 0%, transparent 58%)",
+                  maskImage: "radial-gradient(circle, #000 0%, transparent 58%)",
+                }} />
+
+                {/* Ondes de choc dorées */}
+                {[0, 0.55].map((d, i) => (
+                  <div key={`csw${i}`} style={{
+                    position: "absolute", top: "50%", left: "50%",
+                    width: "200px", height: "200px", borderRadius: "50%",
+                    border: "3px solid rgba(251,191,36,0.7)", pointerEvents: "none",
+                    animation: `shockwave 1.5s ease-out ${d}s infinite`,
+                  }} />
+                ))}
+
+                {/* Confettis dorés */}
+                {Array.from({ length: 26 }).map((_, i) => {
+                  const colors = ["#FCD34D", "#F59E0B", "#FEF3C7", "#fff"];
+                  return (
+                    <div key={`ccf${i}`} style={{
+                      position: "absolute", top: "-6vh",
+                      left: `${(i * 3.7 + (i % 4) * 4) % 100}%`,
+                      width: i % 2 ? "7px" : "9px",
+                      height: i % 2 ? "12px" : "9px",
+                      background: colors[i % colors.length],
+                      borderRadius: i % 3 ? "2px" : "50%",
+                      pointerEvents: "none",
+                      animation: `confettiFall ${2.4 + (i % 4) * 0.4}s linear ${(i % 6) * 0.15}s infinite`,
+                    }} />
+                  );
+                })}
+
+                {/* Particules (explosion) */}
+                {[...Array(30)].map((_, i) => {
+                  const angle = (i * 360) / 30;
                   const color = i % 2 === 0 ? "#FCD34D" : "#F59E0B";
                   return (
                     <div key={i} style={{
                       position: "absolute",
                       left: "50%", top: "50%",
-                      width: "10px", height: "10px",
+                      width: "11px", height: "11px",
                       borderRadius: "50%",
                       background: color,
-                      boxShadow: `0 0 12px ${color}`,
-                      animation: `sparkleBurst 1.6s ease-out ${i * 0.04}s both`,
+                      boxShadow: `0 0 14px ${color}`,
+                      animation: `sparkleBurst 1.7s ease-out ${i * 0.035}s both`,
                       "--rot": `${angle}deg`,
                       pointerEvents: "none",
                     }} />
@@ -1109,7 +1196,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                 position: "relative",
                 textAlign: "center",
                 padding: "32px 40px",
-                animation: isCorra ? "corraPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" : "slideUp 0.35s ease",
+                animation: isCorra ? "bigZoom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)" : "slideUp 0.35s ease",
               }}
             >
               {isCorra ? (
@@ -1128,7 +1215,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                   {/* CORRA ! */}
                   <div style={{
                     position: "relative",
-                    fontSize: "clamp(56px, 16vw, 96px)",
+                    fontSize: "clamp(62px, 18vw, 112px)",
                     fontWeight: "900",
                     letterSpacing: "8px",
                     background: "linear-gradient(180deg, #FEF3C7 0%, #FCD34D 45%, #F59E0B 100%)",
@@ -1136,9 +1223,9 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                     textShadow: `0 0 40px ${accentGlow}`,
-                    filter: "drop-shadow(0 4px 16px rgba(245,158,11,0.6))",
                     lineHeight: 1,
                     marginBottom: "4px",
+                    animation: "glowGold 1.4s ease-in-out 0.6s infinite",
                   }}>
                     CORRA&nbsp;!
                   </div>
@@ -1389,6 +1476,43 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           0%   { opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(0px) scale(0.4); }
           30%  { opacity: 1; }
           100% { opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(-260px) scale(0.2); }
+        }
+        @keyframes bigZoom {
+          0%   { opacity: 0; transform: scale(0.2); filter: blur(6px); }
+          55%  { opacity: 1; transform: scale(1.22); filter: blur(0); }
+          72%  { transform: scale(0.94); }
+          100% { transform: scale(1); }
+        }
+        @keyframes flashBang {
+          0%   { opacity: 0.95; }
+          100% { opacity: 0; }
+        }
+        @keyframes shockwave {
+          0%   { opacity: 0.85; transform: translate(-50%, -50%) scale(0.1); }
+          100% { opacity: 0;    transform: translate(-50%, -50%) scale(2.6); }
+        }
+        @keyframes raysSpin {
+          from { transform: translate(-50%, -50%) rotate(0deg); }
+          to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes screenShake {
+          0%, 100% { transform: translate(0, 0); }
+          20% { transform: translate(-7px, 5px); }
+          40% { transform: translate(7px, -5px); }
+          60% { transform: translate(-5px, -4px); }
+          80% { transform: translate(5px, 4px); }
+        }
+        @keyframes confettiFall {
+          0%   { opacity: 1;   transform: translateY(-20vh) rotate(0deg); }
+          100% { opacity: 0.9; transform: translateY(96vh) rotate(720deg); }
+        }
+        @keyframes glowRed {
+          0%, 100% { filter: drop-shadow(0 4px 24px rgba(239,68,68,0.9)); }
+          50%      { filter: drop-shadow(0 4px 50px rgba(239,68,68,1)); }
+        }
+        @keyframes glowGold {
+          0%, 100% { filter: drop-shadow(0 4px 20px rgba(245,158,11,0.65)); }
+          50%      { filter: drop-shadow(0 4px 46px rgba(251,191,36,1)); }
         }
       `}</style>
     </div>
