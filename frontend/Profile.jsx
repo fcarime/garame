@@ -282,6 +282,102 @@ export default function Profile({ onBack, avatarId = 0, bankroll = 100000, onLog
         display: "flex", flexDirection: "column", gap: "16px",
       }}>
 
+        {/* ── MON COMPTE ── */}
+        <Section
+          title="Mon Compte"
+          color="#4ADE80"
+          action={<SaveBtn onClick={() => handleSave("compte")} saved={savedSection === "compte"} />}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Field
+                label="Pseudo"
+                value={profile.pseudo}
+                onChange={v => update("pseudo", v)}
+                placeholder="Votre pseudo de jeu"
+              />
+            </div>
+            {/* Bankroll */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ fontSize: "9px", fontWeight: "700", color: "rgba(0,217,255,0.6)", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "6px" }}>
+                Bankroll
+              </div>
+              <div style={{
+                padding: "12px 16px",
+                borderRadius: "8px",
+                background: "rgba(245,158,11,0.06)",
+                border: "1px solid rgba(245,158,11,0.25)",
+                display: "flex", alignItems: "center", gap: "6px",
+              }}>
+                <span style={{ fontSize: "22px", fontWeight: "900", color: "#F59E0B" }}>
+                  {bankroll.toLocaleString("fr-FR")}
+                </span>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "rgba(245,158,11,0.6)" }}>FCFA</span>
+
+                {/* Réinitialiser à 100 000 */}
+                {onResetBankroll && (
+                  <div style={{ marginLeft: "auto", display: "flex", gap: "6px", alignItems: "center" }}>
+                    {!resetConfirm ? (
+                      <button
+                        onClick={() => setResetConfirm(true)}
+                        style={{
+                          padding: "6px 12px", borderRadius: "20px",
+                          border: "1px solid rgba(245,158,11,0.4)",
+                          background: "transparent", color: "rgba(245,158,11,0.85)",
+                          fontSize: "9px", fontWeight: "700",
+                          letterSpacing: "1px", textTransform: "uppercase",
+                          cursor: "pointer", whiteSpace: "nowrap",
+                        }}
+                      >
+                        ↺ Réinitialiser
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => { onResetBankroll(); setResetConfirm(false); }}
+                          style={{
+                            padding: "6px 12px", borderRadius: "20px",
+                            border: "none", background: "#F59E0B", color: "#1a1206",
+                            fontSize: "9px", fontWeight: "800",
+                            letterSpacing: "1px", textTransform: "uppercase",
+                            cursor: "pointer", whiteSpace: "nowrap",
+                          }}
+                        >
+                          Confirmer 100 000
+                        </button>
+                        <button
+                          onClick={() => setResetConfirm(false)}
+                          style={{
+                            padding: "6px 10px", borderRadius: "20px",
+                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: "transparent", color: "rgba(255,255,255,0.5)",
+                            fontSize: "9px", fontWeight: "700",
+                            letterSpacing: "1px", textTransform: "uppercase",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Annuler
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <Field
+              label="Date de création du compte"
+              value={formatDate(profile.dateCreation)}
+              readOnly
+            />
+            <Field
+              label="Date de validation des CGU"
+              value={formatDate(profile.dateCGU)}
+              readOnly
+              hint="Conditions Générales d'Utilisation"
+            />
+          </div>
+        </Section>
+
         {/* ── MON PROFIL ── */}
         <Section
           title="Mon Profil"
@@ -386,102 +482,6 @@ export default function Profile({ onBack, avatarId = 0, bankroll = 100000, onLog
               value={profile.commune}
               onChange={v => update("commune", v)}
               placeholder="Commune / Quartier"
-            />
-          </div>
-        </Section>
-
-        {/* ── MON COMPTE ── */}
-        <Section
-          title="Mon Compte"
-          color="#4ADE80"
-          action={<SaveBtn onClick={() => handleSave("compte")} saved={savedSection === "compte"} />}
-        >
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <Field
-                label="Pseudo"
-                value={profile.pseudo}
-                onChange={v => update("pseudo", v)}
-                placeholder="Votre pseudo de jeu"
-              />
-            </div>
-            {/* Bankroll */}
-            <div style={{ gridColumn: "1 / -1" }}>
-              <div style={{ fontSize: "9px", fontWeight: "700", color: "rgba(0,217,255,0.6)", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "6px" }}>
-                Bankroll
-              </div>
-              <div style={{
-                padding: "12px 16px",
-                borderRadius: "8px",
-                background: "rgba(245,158,11,0.06)",
-                border: "1px solid rgba(245,158,11,0.25)",
-                display: "flex", alignItems: "center", gap: "6px",
-              }}>
-                <span style={{ fontSize: "22px", fontWeight: "900", color: "#F59E0B" }}>
-                  {bankroll.toLocaleString("fr-FR")}
-                </span>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "rgba(245,158,11,0.6)" }}>FCFA</span>
-
-                {/* Réinitialiser à 100 000 */}
-                {onResetBankroll && (
-                  <div style={{ marginLeft: "auto", display: "flex", gap: "6px", alignItems: "center" }}>
-                    {!resetConfirm ? (
-                      <button
-                        onClick={() => setResetConfirm(true)}
-                        style={{
-                          padding: "6px 12px", borderRadius: "20px",
-                          border: "1px solid rgba(245,158,11,0.4)",
-                          background: "transparent", color: "rgba(245,158,11,0.85)",
-                          fontSize: "9px", fontWeight: "700",
-                          letterSpacing: "1px", textTransform: "uppercase",
-                          cursor: "pointer", whiteSpace: "nowrap",
-                        }}
-                      >
-                        ↺ Réinitialiser
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => { onResetBankroll(); setResetConfirm(false); }}
-                          style={{
-                            padding: "6px 12px", borderRadius: "20px",
-                            border: "none", background: "#F59E0B", color: "#1a1206",
-                            fontSize: "9px", fontWeight: "800",
-                            letterSpacing: "1px", textTransform: "uppercase",
-                            cursor: "pointer", whiteSpace: "nowrap",
-                          }}
-                        >
-                          Confirmer 100 000
-                        </button>
-                        <button
-                          onClick={() => setResetConfirm(false)}
-                          style={{
-                            padding: "6px 10px", borderRadius: "20px",
-                            border: "1px solid rgba(255,255,255,0.15)",
-                            background: "transparent", color: "rgba(255,255,255,0.5)",
-                            fontSize: "9px", fontWeight: "700",
-                            letterSpacing: "1px", textTransform: "uppercase",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Annuler
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-            <Field
-              label="Date de création du compte"
-              value={formatDate(profile.dateCreation)}
-              readOnly
-            />
-            <Field
-              label="Date de validation des CGU"
-              value={formatDate(profile.dateCGU)}
-              readOnly
-              hint="Conditions Générales d'Utilisation"
             />
           </div>
         </Section>
