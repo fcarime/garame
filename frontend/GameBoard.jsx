@@ -29,7 +29,7 @@ function loadLocalGame() {
   try { return JSON.parse(sessionStorage.getItem(LOCAL_GAME_KEY) || "null"); } catch { return null; }
 }
 
-export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false, aiName = null, aiAvatarId = null, onRematch = null }) {
+export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false, aiName = null, aiAvatarId = null, onRematch = null, onBankrollChange = null }) {
   const isLocalGame = gameMode === "ia" || gameMode === "multiplayer";
   // Restaure la partie uniquement si ce montage fait suite à un rafraîchissement (resumed)
   const savedGame = resumed && isLocalGame ? loadLocalGame() : null;
@@ -299,7 +299,10 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
 
     socket.on("bankrollUpdated", (bankrolls) => {
       const myName = players[myIndex].name;
-      if (typeof bankrolls[myName] === "number") setMyBankroll(bankrolls[myName]);
+      if (typeof bankrolls[myName] === "number") {
+        setMyBankroll(bankrolls[myName]);
+        onBankrollChange?.(bankrolls[myName]);
+      }
     });
 
     socket.on("gameRestarted", () => {
@@ -464,17 +467,16 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   // Applique le résultat d'une partie Sans mise (IA) au solde du compte et le persiste
   const applyLocalResult = (humanWon) => {
     if (gameMode !== "ia") return;
-    setMyBankroll(prev => {
-      const next = Math.max(0, prev + (humanWon ? 2000 : -2000));
-      if (localPseudo) {
-        fetch("/api/user/bankroll", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pseudo: localPseudo, bankroll: next }),
-        }).catch(() => {});
-      }
-      return next;
-    });
+    const next = Math.max(0, myBankroll + (humanWon ? 2000 : -2000));
+    setMyBankroll(next);
+    onBankrollChange?.(next); // remonte à App pour que le Rejouer parte de la bonne valeur
+    if (localPseudo) {
+      fetch("/api/user/bankroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pseudo: localPseudo, bankroll: next }),
+      }).catch(() => {});
+    }
   };
 
   const endRound = (winner, lastCard = null, penultCard = null) => {
@@ -1299,6 +1301,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                     lineHeight: 1,
                     marginBottom: "4px",
                     animation: "glowGold 1.4s ease-in-out 0.6s infinite",
+                    transform: "translateX(0.6em)",
                   }}>
                     KORAS&nbsp;!
                   </div>

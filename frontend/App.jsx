@@ -211,6 +211,7 @@ export default function App() {
           aiName={aiOpponent?.name ?? null}
           aiAvatarId={aiOpponent?.avatarId ?? null}
           onRematch={handleRematch}
+          onBankrollChange={setBankroll}
         />
       )}
     </div>
