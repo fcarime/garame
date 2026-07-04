@@ -4,7 +4,7 @@ import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import SoundControls from "./SoundControls";
-import { playCardSound, playBonusSound, speak } from "./audio";
+import { playCardSound, playBonusSound, playLoseSound, speak } from "./audio";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
@@ -162,6 +162,13 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     playBonusSound();
     if (roundWinInfo.hasBonusWin) speak("Koras");
   }, [roundWinInfo]);
+
+  // Son de défaite en fin de partie
+  useEffect(() => {
+    if (!voiceMountedRef.current || !gameOver) return;
+    const oppIdx = gameMode === "online" ? 1 - myIndex : 1;
+    if (scores[myIndex] < scores[oppIdx]) playLoseSound();
+  }, [gameOver]);
 
   // Écoute des événements socket en mode online
   useEffect(() => {

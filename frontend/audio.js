@@ -65,6 +65,9 @@ export function playBonusSound() { playFile("/sounds/player_succes_manche.mp3", 
 // Son de sélection d'un bouton de lancement de partie
 export function playSelectSound() { playFile("/sounds/select_button.mp3", 0.7); }
 
+// Son de partie perdue
+export function playLoseSound() { playFile("/sounds/player_lose_partis.mp3", 0.85); }
+
 // ── Voix (KORAS / 33 Export) via synthèse vocale du navigateur ─────────────
 export function speak(text) {
   if (!settings.effects) return;
