@@ -15,9 +15,17 @@ import koras1 from "./public/sounds/kora/koras_1.mp3";
 import koras2 from "./public/sounds/kora/koras_2.mp3";
 import koras3 from "./public/sounds/kora/koras_3.mp3";
 import koras4 from "./public/sounds/kora/koras_4.mp3";
+import tri0 from "./public/sounds/tri_seven/tri_sept_0.mp3";
+import tri1 from "./public/sounds/tri_seven/tri_sept_1.mp3";
+import tri2 from "./public/sounds/tri_seven/tri_sept_2.mp3";
+import vingt0 from "./public/sounds/twinty_one/vingt_un_0.mp3";
+import vingt1 from "./public/sounds/twinty_one/vingt_un_1.mp3";
+import vingt2 from "./public/sounds/twinty_one/vingt_un_2.mp3";
 
 const EXPORT_SOUNDS = [export0, export1, export2];
 const KORAS_SOUNDS = [koras0, koras1, koras2, koras3, koras4];
+const TRISEVEN_SOUNDS = [tri0, tri1, tri2];
+const UNDER21_SOUNDS = [vingt0, vingt1, vingt2];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const KEY = "garame_audio";
@@ -109,6 +117,10 @@ export function playLoseSound() { playFile(loseUrl, 1.0); }
 // Voix « 33 Export » / « KORAS » (variante aléatoire)
 export function playExportSound() { playFile(pick(EXPORT_SOUNDS), 1.0); }
 export function playKorasSound() { playFile(pick(KORAS_SOUNDS), 1.0); }
+
+// Victoires spéciales : Triple Sept / Main basse (≤ 21) — variante aléatoire
+export function playTripleSevenSound() { playFile(pick(TRISEVEN_SOUNDS), 1.0); }
+export function playUnder21Sound() { playFile(pick(UNDER21_SOUNDS), 1.0); }
 
 // Jingle de début de partie : coupe la musique, joue le start, puis relance la musique
 export async function playStartSound() {

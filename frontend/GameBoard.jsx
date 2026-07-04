@@ -4,7 +4,7 @@ import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import SoundControls from "./SoundControls";
-import { playCardSound, playBonusSound, playLoseSound, playSelectSound, playExportSound, playKorasSound, playStartSound } from "./audio";
+import { playCardSound, playBonusSound, playLoseSound, playSelectSound, playExportSound, playKorasSound, playStartSound, playTripleSevenSound, playUnder21Sound } from "./audio";
 import { getAvatarStyle, getAvatarColor, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
@@ -157,6 +157,11 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const voiceMountedRef = useRef(false);
   useEffect(() => { voiceMountedRef.current = true; }, []);
   useEffect(() => { if (voiceMountedRef.current && exportInfo) playExportSound(); }, [exportInfo]);
+  useEffect(() => {
+    if (!voiceMountedRef.current || !specialWinInfo) return;
+    if (specialWinInfo.reason === "triple7") playTripleSevenSound();
+    else if (specialWinInfo.reason === "under21") playUnder21Sound();
+  }, [specialWinInfo]);
   useEffect(() => {
     if (!voiceMountedRef.current || !roundWinInfo) return;
     playBonusSound();
