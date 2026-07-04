@@ -6,6 +6,18 @@ import musicUrl from "./public/sounds/music_ambiance.mp3";
 import bonusUrl from "./public/sounds/player_succes_manche.mp3";
 import selectUrl from "./public/sounds/select_button.mp3";
 import loseUrl from "./public/sounds/player_lose_partis.mp3";
+import export0 from "./public/sounds/export/33export_0.mp3";
+import export1 from "./public/sounds/export/33export_1.mp3";
+import export2 from "./public/sounds/export/33export_2.mp3";
+import koras0 from "./public/sounds/kora/koras_0.mp3";
+import koras1 from "./public/sounds/kora/koras_1.mp3";
+import koras2 from "./public/sounds/kora/koras_2.mp3";
+import koras3 from "./public/sounds/kora/koras_3.mp3";
+import koras4 from "./public/sounds/kora/koras_4.mp3";
+
+const EXPORT_SOUNDS = [export0, export1, export2];
+const KORAS_SOUNDS = [koras0, koras1, koras2, koras3, koras4];
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const KEY = "garame_audio";
 
@@ -92,6 +104,10 @@ export function playSelectSound() { playFile(selectUrl, 1.0); }
 
 // Son de partie perdue
 export function playLoseSound() { playFile(loseUrl, 1.0); }
+
+// Voix « 33 Export » / « KORAS » (variante aléatoire)
+export function playExportSound() { playFile(pick(EXPORT_SOUNDS), 1.0); }
+export function playKorasSound() { playFile(pick(KORAS_SOUNDS), 1.0); }
 
 // ── Voix (KORAS / 33 Export) via synthèse vocale du navigateur ─────────────
 export function speak(text) {

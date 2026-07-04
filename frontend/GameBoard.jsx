@@ -4,7 +4,7 @@ import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import SoundControls from "./SoundControls";
-import { playCardSound, playBonusSound, playLoseSound, playSelectSound, speak } from "./audio";
+import { playCardSound, playBonusSound, playLoseSound, playSelectSound, playExportSound, playKorasSound } from "./audio";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
@@ -156,11 +156,11 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   // Voix : « KORAS » / « 33 Export » quand l'overlay apparaît (pas au 1er montage)
   const voiceMountedRef = useRef(false);
   useEffect(() => { voiceMountedRef.current = true; }, []);
-  useEffect(() => { if (voiceMountedRef.current && exportInfo) speak("33 Export"); }, [exportInfo]);
+  useEffect(() => { if (voiceMountedRef.current && exportInfo) playExportSound(); }, [exportInfo]);
   useEffect(() => {
     if (!voiceMountedRef.current || !roundWinInfo) return;
     playBonusSound();
-    if (roundWinInfo.hasBonusWin) speak("Koras");
+    if (roundWinInfo.hasBonusWin) playKorasSound();
   }, [roundWinInfo]);
 
   // Son de défaite en fin de partie
