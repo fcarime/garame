@@ -16,6 +16,16 @@ export const AVATARS = [
   { id: 11, name: "Hérisson",  col: 3, row: 2 },
 ];
 
+// Couleur d'accentuation associée à chaque avatar (pour teinter un nom, etc.)
+export const AVATAR_COLORS = [
+  "#F59E0B", "#94A3B8", "#FBBF24", "#A78BFA",
+  "#F97316", "#60A5FA", "#CBD5E1", "#FCD34D",
+  "#F87171", "#FDBA74", "#4ADE80", "#C084FC",
+];
+export function getAvatarColor(id) {
+  return AVATAR_COLORS[id] ?? AVATAR_COLORS[0];
+}
+
 // Avatars par défaut selon le rôle
 export const DEFAULT_AVATARS = {
   player1: 0,   // Lion

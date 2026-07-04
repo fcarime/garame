@@ -5,7 +5,7 @@ import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import SoundControls from "./SoundControls";
 import { playCardSound, playBonusSound, playLoseSound, playSelectSound, playExportSound, playKorasSound } from "./audio";
-import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
+import { getAvatarStyle, getAvatarColor, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
 import fondTableUrl from "./public/fond_table_mobile.png";
@@ -1136,6 +1136,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         const isCorra = hasBonusWin;
         const accentColor = isCorra ? "#FCD34D" : "#00D9FF";
         const accentGlow = isCorra ? "rgba(251,191,36,0.55)" : "rgba(0,217,255,0.45)";
+        const winnerAvatarId = winner === myIndex ? myAvatarId : opponentAvatarId;
+        const winnerColor = getAvatarColor(winnerAvatarId);
         return (
           <div
             style={{
@@ -1280,11 +1282,15 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                     + Manche bonus
                   </div>
                   <div style={{
-                    fontSize: "15px",
-                    fontWeight: "700",
-                    color: "#fff",
-                    letterSpacing: "1px",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    fontSize: "15px", fontWeight: "700", letterSpacing: "1px",
+                    color: winnerColor,
                   }}>
+                    <div style={{
+                      ...getAvatarStyle(winnerAvatarId, 28),
+                      border: `2px solid ${winnerColor}`,
+                      boxShadow: `0 0 10px ${winnerColor}88, inset 0 0 6px 2px rgba(0,0,0,0.5)`,
+                    }} />
                     {players[winner].name}
                   </div>
                 </>
@@ -1315,14 +1321,21 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                   </div>
                   <div style={{
                     position: "relative",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
                     fontSize: "clamp(34px, 8vw, 52px)",
                     fontWeight: "900",
-                    color: "#fff",
+                    color: winnerColor,
                     letterSpacing: "1px",
-                    textShadow: `0 0 30px ${accentGlow}`,
+                    textShadow: `0 0 30px ${winnerColor}99`,
                     lineHeight: 1.1,
                     marginBottom: "8px",
                   }}>
+                    <div style={{
+                      ...getAvatarStyle(winnerAvatarId, 46),
+                      border: `3px solid ${winnerColor}`,
+                      boxShadow: `0 0 16px ${winnerColor}88, inset 0 0 8px 3px rgba(0,0,0,0.5)`,
+                      flexShrink: 0,
+                    }} />
                     {players[winner].name}
                   </div>
                   <div style={{
