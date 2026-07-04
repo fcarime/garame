@@ -4,7 +4,7 @@ import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import SoundControls from "./SoundControls";
-import { playCardSound, playBonusSound, playLoseSound, playSelectSound, playExportSound, playKorasSound } from "./audio";
+import { playCardSound, playBonusSound, playLoseSound, playSelectSound, playExportSound, playKorasSound, playStartSound } from "./audio";
 import { getAvatarStyle, getAvatarColor, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
@@ -1435,7 +1435,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
               {!(gameMode === "online" && opponentLeft) && (
                 <button
-                  onClick={restartGame}
+                  onClick={() => { playStartSound(); restartGame(); }}
                   style={{
                     padding: "13px 28px",
                     fontSize: "13px",

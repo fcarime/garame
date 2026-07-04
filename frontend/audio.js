@@ -6,6 +6,7 @@ import musicUrl from "./public/sounds/music_ambiance.mp3";
 import bonusUrl from "./public/sounds/player_succes_manche.mp3";
 import selectUrl from "./public/sounds/select_button.mp3";
 import loseUrl from "./public/sounds/player_lose_partis.mp3";
+import startUrl from "./public/sounds/start_partis.mp3";
 import export0 from "./public/sounds/export/33export_0.mp3";
 import export1 from "./public/sounds/export/33export_1.mp3";
 import export2 from "./public/sounds/export/33export_2.mp3";
@@ -108,6 +109,24 @@ export function playLoseSound() { playFile(loseUrl, 1.0); }
 // Voix « 33 Export » / « KORAS » (variante aléatoire)
 export function playExportSound() { playFile(pick(EXPORT_SOUNDS), 1.0); }
 export function playKorasSound() { playFile(pick(KORAS_SOUNDS), 1.0); }
+
+// Jingle de début de partie : coupe la musique, joue le start, puis relance la musique
+export async function playStartSound() {
+  if (!settings.effects) return;
+  const ac = audioCtx();
+  if (!ac) return;
+  const buf = await loadBuffer(startUrl);
+  if (!buf) return;
+  const wasMusic = settings.music;
+  stopMusic(); // met la musique de fond en pause pendant le jingle
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  const g = ac.createGain();
+  g.gain.value = 1.0;
+  src.connect(g).connect(ac.destination);
+  src.onended = () => { if (wasMusic && settings.music) startMusic(); };
+  src.start();
+}
 
 // ── Voix (KORAS / 33 Export) via synthèse vocale du navigateur ─────────────
 export function speak(text) {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getAvatarStyle } from "./avatars";
 import { randomOpponent } from "./names";
+import { playStartSound } from "./audio";
 
 export default function Matchmaking({ pseudo = "Vous", myAvatarId = 0, onMatchFound, onCancel }) {
   // Adversaire et durée de recherche tirés une seule fois au montage
@@ -16,6 +17,7 @@ export default function Matchmaking({ pseudo = "Vous", myAvatarId = 0, onMatchFo
     const timer = setInterval(() => setElapsed(Date.now() - start), 80);
     const matchTimer = setTimeout(() => {
       setFound(true);
+      playStartSound(); // coupe la musique, joue le jingle de début, puis la relance
       // Laisse voir « adversaire trouvé » un court instant avant de lancer la partie
       setTimeout(() => onFoundRef.current?.(opponentRef.current), 1100);
     }, delayRef.current);
