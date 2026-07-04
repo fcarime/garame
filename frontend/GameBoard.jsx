@@ -3,6 +3,7 @@ import Hand from "./Hand";
 import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
+import SlapHand from "./SlapHand";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
@@ -1002,15 +1003,25 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             {players[exportInfo.winner].name}
           </div>
 
-          {/* Les deux 3 */}
+          {/* Les deux 3 — chaque carte est "claquée" par une main, en deux temps */}
           {exportInfo.lastCard && exportInfo.penultCard && (
             <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
               {[exportInfo.penultCard, exportInfo.lastCard].map((c, i) => (
-                <div key={i} style={{
-                  filter: "drop-shadow(0 0 20px rgba(239,68,68,0.9))",
-                  animation: `cardSpin 0.9s ease-out ${i * 0.2}s both`,
-                }}>
-                  <Card value={c.value} suit={c.suit} />
+                <div key={i} style={{ position: "relative" }}>
+                  {/* Main qui attrape puis claque la carte */}
+                  <div style={{
+                    position: "absolute", top: "50%", left: "50%",
+                    zIndex: 3, pointerEvents: "none",
+                    animation: `handGrabSlap 1s ease-out ${i * 0.55}s both`,
+                  }}>
+                    <SlapHand size={76} />
+                  </div>
+                  <div style={{
+                    filter: "drop-shadow(0 0 20px rgba(239,68,68,0.9))",
+                    animation: `cardSlam 0.3s ease-out ${i * 0.55 + 0.5}s both`,
+                  }}>
+                    <Card value={c.value} suit={c.suit} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -1230,15 +1241,24 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                     KORA&nbsp;!
                   </div>
 
-                  {/* Carte 3 mise en avant */}
+                  {/* Carte 3 mise en avant — claquée par la main */}
                   <div style={{
                     position: "relative",
                     display: "inline-block",
                     margin: "18px 0 14px",
-                    animation: "cardSpin 0.9s ease-out",
                     filter: "drop-shadow(0 0 24px rgba(251,191,36,0.85))",
                   }}>
-                    <Card value={lastCard.value} suit={lastCard.suit} />
+                    {/* Main qui attrape puis claque la carte */}
+                    <div style={{
+                      position: "absolute", top: "50%", left: "50%",
+                      zIndex: 3, pointerEvents: "none",
+                      animation: "handGrabSlap 1s ease-out both",
+                    }}>
+                      <SlapHand size={92} />
+                    </div>
+                    <div style={{ animation: "cardSlam 0.3s ease-out 0.5s both" }}>
+                      <Card value={lastCard.value} suit={lastCard.suit} />
+                    </div>
                   </div>
 
                   <div style={{
@@ -1467,6 +1487,20 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           0%   { transform: rotateY(0deg) scale(0.7); }
           50%  { transform: rotateY(180deg) scale(1.15); }
           100% { transform: rotateY(360deg) scale(1); }
+        }
+        @keyframes handGrabSlap {
+          0%   { opacity: 0; transform: translate(-50%, 130%) scale(0.8) rotate(-14deg); }
+          22%  { opacity: 1; transform: translate(-50%, 22%)  scale(1)   rotate(-4deg); }
+          38%  { transform: translate(-50%, -8%) scale(1.03) rotate(0deg); }
+          54%  { transform: translate(-50%, 24%) scale(1.06) rotate(3deg); }
+          62%  { transform: translate(-50%, 16%) scale(1) rotate(1deg); }
+          84%  { opacity: 1; transform: translate(-50%, 90%) scale(0.92) rotate(-2deg); }
+          100% { opacity: 0; transform: translate(-50%, 140%) scale(0.82); }
+        }
+        @keyframes cardSlam {
+          0%   { opacity: 0; transform: scale(1.55); }
+          60%  { opacity: 1; transform: scale(0.94); }
+          100% { opacity: 1; transform: scale(1); }
         }
         @keyframes haloPulse {
           0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
