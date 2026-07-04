@@ -69,6 +69,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   const [opponentReconnecting, setOpponentReconnecting] = useState(0);
   const [opponentLeft, setOpponentLeft] = useState(false);
   const [exportInfo, setExportInfo] = useState(savedGame?.exportInfo ?? null); // { winner } — 33 Export
+  const [tableReveal, setTableReveal] = useState(null); // { cards, reason } — 5 cartes du gagnant posées sur le tapis
   const penultimateCardsRef = useRef(savedGame?.penult ?? [null, null]); // 4ème carte jouée par chaque joueur
 
   const startRound = () => {
@@ -1051,15 +1052,52 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
         </div>
       )}
 
+      {/* ── 5 cartes du gagnant posées sur le tapis (après l'effet spécial) ── */}
+      {tableReveal && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 40,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          pointerEvents: "none",
+        }}>
+          <div style={{
+            display: "flex", gap: "clamp(4px, 1.5vw, 10px)",
+            padding: "16px 14px", borderRadius: "16px",
+            background: "rgba(4,12,30,0.4)", backdropFilter: "blur(2px)",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+            animation: "slideUp 0.35s ease",
+          }}>
+            {tableReveal.cards.map((card, i) => {
+              const isKey = tableReveal.reason === "triple7" && card.value === "7";
+              return (
+                <div key={i} style={{
+                  animation: `cardSpin 0.6s ease-out ${i * 0.1}s both`,
+                  transform: isKey ? "translateY(-10px)" : "none",
+                  filter: isKey
+                    ? "drop-shadow(0 0 16px rgba(251,191,36,0.85))"
+                    : "drop-shadow(0 6px 12px rgba(0,0,0,0.55))",
+                }}>
+                  <Card value={card.value} suit={card.suit} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Special Win Overlay ── */}
       {specialWinInfo && (
         <div
           onClick={() => {
             const sw = specialWinInfo;
             setSpecialWinInfo(null);
-            if (gameMode !== "online" || myIndex === 0) {
-              endRound(sw.player);
-            }
+            // Pose les 5 cartes du gagnant sur le tapis, puis enchaîne la manche
+            setTableReveal({ cards: sw.hands[sw.player], reason: sw.reason });
+            setTimeout(() => {
+              setTableReveal(null);
+              if (gameMode !== "online" || myIndex === 0) {
+                endRound(sw.player);
+              }
+            }, 2600);
           }}
           style={{
             position: "fixed", inset: 0,
