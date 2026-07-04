@@ -38,7 +38,7 @@ garame/
 ## Conditions de victoire spéciales (GameBoard.jsx → `checkSpecialWin`)
 Vérifiées à la distribution, avant le début du jeu :
 1. **Triple 7** : ≥ 3 cartes "7" dans la main → victoire immédiate, priorité absolue
-2. **Main < 21** : somme des valeurs < 21 → victoire immédiate (le `roundStarter` gagne en cas d'égalité)
+2. **Main ≤ 21** : somme des valeurs ≤ 21 → victoire immédiate (le `roundStarter` gagne en cas d'égalité)
 
 ## Bonus dernier 3 (GameBoard.jsx → `endRound`)
 Si la carte gagnante du dernier pli d'une manche est un "3" → le vainqueur remporte aussi automatiquement la manche suivante (pot × 2 cumulé, compteur de manches +2).

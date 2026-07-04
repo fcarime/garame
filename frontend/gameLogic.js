@@ -127,7 +127,7 @@ export function getHandSum(hand) {
 }
 
 // Returns { player, reason, sum? } or null. Triple-7 has priority over under-21.
-// If both players are under 21, roundStarter wins.
+// A hand whose values sum to 21 or less wins. If both qualify, roundStarter wins.
 export function checkSpecialWin(hands, roundStarter) {
   for (let i = 0; i < hands.length; i++) {
     if (hands[i].filter(c => c.value === "7").length >= 3) {
@@ -136,7 +136,7 @@ export function checkSpecialWin(hands, roundStarter) {
   }
   for (const i of [roundStarter, 1 - roundStarter]) {
     const sum = getHandSum(hands[i]);
-    if (sum < 21) return { player: i, reason: "under21", sum };
+    if (sum <= 21) return { player: i, reason: "under21", sum };
   }
   return null;
 }

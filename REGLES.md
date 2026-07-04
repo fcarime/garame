@@ -58,7 +58,7 @@ Ordre croissant : **3 < 4 < 5 < 6 < 7 < 8 < 9**
 - Priorité sur toutes les autres règles.
 
 ### 2. Main Basse 🃏 *(second en priorité)*
-> Si la **somme des valeurs** des cartes d'un joueur est **strictement inférieure à 21**, il gagne la manche immédiatement.
+> Si la **somme des valeurs** des cartes d'un joueur est **inférieure ou égale à 21**, il gagne la manche immédiatement.
 
 - Sa main est **révélée face visible** avec le total affiché.
 - Si les deux joueurs remplissent cette condition simultanément, c'est le **joueur qui commence** (roundStarter) qui gagne.
