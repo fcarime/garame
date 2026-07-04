@@ -42,21 +42,24 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
           width: "min(500px, 80vw)",
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
-          <button onClick={onProfile} style={{
-            padding: "7px 14px",
-            borderRadius: "20px",
-            border: "1px solid rgba(0,217,255,0.3)",
-            background: "rgba(15,23,42,0.85)",
-            color: "rgba(0,217,255,0.8)",
-            fontSize: "10px", fontWeight: "700",
-            letterSpacing: "1.5px", textTransform: "uppercase",
-            cursor: "pointer",
-            backdropFilter: "blur(12px)",
-            display: "flex", alignItems: "center", gap: "5px",
-            touchAction: "manipulation",
-          }}>
-            <span>👤</span> {pseudo || "MON COMPTE"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button onClick={onProfile} style={{
+              padding: "7px 14px",
+              borderRadius: "20px",
+              border: "1px solid rgba(0,217,255,0.3)",
+              background: "rgba(15,23,42,0.85)",
+              color: "rgba(0,217,255,0.8)",
+              fontSize: "10px", fontWeight: "700",
+              letterSpacing: "1.5px", textTransform: "uppercase",
+              cursor: "pointer",
+              backdropFilter: "blur(12px)",
+              display: "flex", alignItems: "center", gap: "5px",
+              touchAction: "manipulation",
+            }}>
+              <span>👤</span> {pseudo || "MON COMPTE"}
+            </button>
+            <SoundControls compact />
+          </div>
           <div style={{
             padding: "7px 14px",
             borderRadius: "20px",
@@ -94,11 +97,6 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
         }}>
           Jeu de Cartes Traditionnel Africain
         </div>
-      </div>
-
-      {/* Contrôles audio */}
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <SoundControls />
       </div>
 
       {/* Boutons de mode */}
