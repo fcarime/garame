@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AVATARS, getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import SoundControls from "./SoundControls";
+import { playSelectSound } from "./audio";
 
 export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo = "" }) {
   const [selectedAvatars, setSelectedAvatars] = useState([DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2]);
@@ -113,7 +114,7 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
         {modes.map(mode => (
           <button
             key={mode.key}
-            onClick={() => onStartGame(mode.key, selectedAvatars)}
+            onClick={() => { playSelectSound(); onStartGame(mode.key, selectedAvatars); }}
             style={{
               flex: "1 1 clamp(120px, 26vw, 200px)",
               minWidth: "120px",

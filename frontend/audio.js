@@ -49,30 +49,21 @@ export function playCardSound() {
   src.start(now); src.stop(now + dur);
 }
 
-// ── Son de bonus / manche gagnée (carillon ascendant) ─────────────────────
-export function playBonusSound() {
+// ── Lecture d'un fichier son ponctuel (SFX) ────────────────────────────────
+function playFile(src, volume = 1) {
   if (!settings.effects) return;
-  const ac = audioCtx();
-  if (!ac) return;
-  const now = ac.currentTime;
-  const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 · E5 · G5 · C6
-  const master = ac.createGain();
-  master.gain.value = 0.5;
-  master.connect(ac.destination);
-  notes.forEach((f, i) => {
-    const t = now + i * 0.1;
-    const osc = ac.createOscillator();
-    osc.type = "triangle";
-    osc.frequency.value = f;
-    const g = ac.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-    osc.connect(g).connect(master);
-    osc.start(t);
-    osc.stop(t + 0.55);
-  });
+  try {
+    const a = new Audio(src);
+    a.volume = volume;
+    a.play().catch(() => {});
+  } catch {}
 }
+
+// Son de manche gagnée
+export function playBonusSound() { playFile("/sounds/player_succes_manche.mp3", 0.85); }
+
+// Son de sélection d'un bouton de lancement de partie
+export function playSelectSound() { playFile("/sounds/select_button.mp3", 0.7); }
 
 // ── Voix (KORAS / 33 Export) via synthèse vocale du navigateur ─────────────
 export function speak(text) {
@@ -87,61 +78,19 @@ export function speak(text) {
   } catch {}
 }
 
-// ── Musique d'ambiance synthétisée (pad doux en boucle) ────────────────────
-let musicTimer = null;
-let musicGain = null;
-let chordIdx = 0;
-const CHORDS = [
-  [220.00, 277.18, 329.63],
-  [196.00, 246.94, 293.66],
-  [174.61, 220.00, 261.63],
-  [164.81, 207.65, 246.94],
-];
-
-function playChord() {
-  const ac = audioCtx();
-  if (!ac || !musicGain) return;
-  const now = ac.currentTime;
-  const chord = CHORDS[chordIdx % CHORDS.length];
-  chordIdx++;
-  const lp = ac.createBiquadFilter();
-  lp.type = "lowpass"; lp.frequency.value = 850;
-  lp.connect(musicGain);
-  chord.forEach((freq, i) => {
-    const osc = ac.createOscillator();
-    osc.type = i === 0 ? "sine" : "triangle";
-    osc.frequency.value = freq;
-    const g = ac.createGain();
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.linearRampToValueAtTime(0.12, now + 1.2);   // attaque douce
-    g.gain.linearRampToValueAtTime(0.0001, now + 3.6); // relâche
-    osc.connect(g).connect(lp);
-    osc.start(now); osc.stop(now + 3.8);
-  });
-}
-
+// ── Musique de fond (fichier, en boucle, volume bas) ───────────────────────
+let musicEl = null;
 function startMusic() {
-  const ac = audioCtx();
-  if (!ac || musicTimer) return;
-  musicGain = ac.createGain();
-  musicGain.gain.value = 0.4; // volume global bas (« pas trop fort »)
-  musicGain.connect(ac.destination);
-  chordIdx = 0;
-  playChord();
-  musicTimer = setInterval(playChord, 3400);
+  if (!musicEl) {
+    musicEl = new Audio("/sounds/music_ambiance.mp3");
+    musicEl.loop = true;
+    musicEl.volume = 0.2;
+  }
+  musicEl.play().catch(() => {});
 }
 
 function stopMusic() {
-  if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
-  if (musicGain) {
-    try {
-      const ac = audioCtx();
-      if (ac) musicGain.gain.setTargetAtTime(0.0001, ac.currentTime, 0.4);
-      const g = musicGain;
-      setTimeout(() => { try { g.disconnect(); } catch {} }, 1200);
-    } catch {}
-    musicGain = null;
-  }
+  if (musicEl) { try { musicEl.pause(); } catch {} }
 }
 
 function applyMusic() {
