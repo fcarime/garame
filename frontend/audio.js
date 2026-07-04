@@ -49,14 +49,33 @@ export function playCardSound() {
   src.start(now); src.stop(now + dur);
 }
 
-// ── Lecture d'un fichier son ponctuel (SFX) ────────────────────────────────
-function playFile(src, volume = 1) {
+// ── Lecture des mp3 via le même AudioContext (plus fiable que <audio>) ──────
+const buffers = new Map(); // src -> AudioBuffer | Promise<AudioBuffer|null>
+function loadBuffer(src) {
+  const ac = audioCtx();
+  if (!ac) return Promise.resolve(null);
+  if (buffers.has(src)) return Promise.resolve(buffers.get(src));
+  const p = fetch(src)
+    .then((r) => r.arrayBuffer())
+    .then((ab) => ac.decodeAudioData(ab))
+    .then((buf) => { buffers.set(src, buf); return buf; })
+    .catch(() => { buffers.delete(src); return null; });
+  buffers.set(src, p);
+  return p;
+}
+
+async function playFile(src, volume = 1) {
   if (!settings.effects) return;
-  try {
-    const a = new Audio(src);
-    a.volume = volume;
-    a.play().catch(() => {});
-  } catch {}
+  const ac = audioCtx();
+  if (!ac) return;
+  const buf = await loadBuffer(src);
+  if (!buf) return;
+  const source = ac.createBufferSource();
+  source.buffer = buf;
+  const g = ac.createGain();
+  g.gain.value = volume;
+  source.connect(g).connect(ac.destination);
+  source.start();
 }
 
 // Son de manche gagnée
@@ -81,19 +100,30 @@ export function speak(text) {
   } catch {}
 }
 
-// ── Musique de fond (fichier, en boucle, volume bas) ───────────────────────
-let musicEl = null;
-function startMusic() {
-  if (!musicEl) {
-    musicEl = new Audio("/sounds/music_ambiance.mp3");
-    musicEl.loop = true;
-    musicEl.volume = 0.4;
-  }
-  musicEl.play().catch(() => {});
+// ── Musique de fond (mp3 en boucle via AudioContext, volume bas) ───────────
+let musicSource = null;
+let musicGain = null;
+let musicStarting = false;
+async function startMusic() {
+  const ac = audioCtx();
+  if (!ac || musicSource || musicStarting) return;
+  musicStarting = true;
+  const buf = await loadBuffer("/sounds/music_ambiance.mp3");
+  musicStarting = false;
+  if (!buf || !settings.music || musicSource) return;
+  musicGain = ac.createGain();
+  musicGain.gain.value = 0.4;
+  musicGain.connect(ac.destination);
+  musicSource = ac.createBufferSource();
+  musicSource.buffer = buf;
+  musicSource.loop = true;
+  musicSource.connect(musicGain);
+  musicSource.start();
 }
 
 function stopMusic() {
-  if (musicEl) { try { musicEl.pause(); } catch {} }
+  if (musicSource) { try { musicSource.stop(); } catch {} musicSource = null; }
+  if (musicGain) { try { musicGain.disconnect(); } catch {} musicGain = null; }
 }
 
 function applyMusic() {
