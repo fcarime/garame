@@ -107,28 +107,46 @@ export function speak(text) {
 }
 
 // ── Musique de fond (mp3 en boucle via AudioContext, volume bas) ───────────
+let musicBuffer = null;
 let musicSource = null;
 let musicGain = null;
+let musicTimer = null;
 let musicStarting = false;
+let musicStopped = true;
+
 async function startMusic() {
   const ac = audioCtx();
-  if (!ac || musicSource || musicStarting) return;
+  if (!ac || !musicStopped || musicStarting) return; // déjà en cours
   musicStarting = true;
-  const buf = await loadBuffer(musicUrl);
+  if (!musicBuffer) musicBuffer = await loadBuffer(musicUrl);
   musicStarting = false;
-  if (!buf || !settings.music || musicSource) return;
+  if (!musicBuffer || !settings.music) return;
+  musicStopped = false;
   musicGain = ac.createGain();
-  musicGain.gain.value = 0.4;
+  musicGain.gain.value = 0.2;
   musicGain.connect(ac.destination);
-  musicSource = ac.createBufferSource();
-  musicSource.buffer = buf;
-  musicSource.loop = true;
-  musicSource.connect(musicGain);
-  musicSource.start();
+  playMusicOnce();
+}
+
+// Une passe de la musique, puis relance après une pause de 0,2 s (boucle manuelle)
+function playMusicOnce() {
+  const ac = audioCtx();
+  if (!ac || musicStopped || !musicGain) return;
+  const src = ac.createBufferSource();
+  src.buffer = musicBuffer;
+  src.connect(musicGain);
+  src.onended = () => {
+    if (musicStopped) return;
+    musicTimer = setTimeout(playMusicOnce, 200); // pause de 0,2 s entre les boucles
+  };
+  musicSource = src;
+  src.start();
 }
 
 function stopMusic() {
-  if (musicSource) { try { musicSource.stop(); } catch {} musicSource = null; }
+  musicStopped = true;
+  if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
+  if (musicSource) { try { musicSource.onended = null; musicSource.stop(); } catch {} musicSource = null; }
   if (musicGain) { try { musicGain.disconnect(); } catch {} musicGain = null; }
 }
 
