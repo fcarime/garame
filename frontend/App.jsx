@@ -127,6 +127,13 @@ export default function App() {
     setScreen("game");
   };
 
+  // Rejouer en mode "En ligne" (IA) → nouvelle recherche d'un autre adversaire
+  const handleRematch = () => {
+    setAiOpponent(null);
+    setResumeGame(false);
+    setScreen("matchmaking");
+  };
+
   const handleOnlineGameStart = (socket, myIndex, roomCode, remotePseudo) => {
     setResumeGame(false);
     setOnlineData({ socket, myIndex, roomCode, remotePseudo });
@@ -203,6 +210,7 @@ export default function App() {
           resumed={resumeGame}
           aiName={aiOpponent?.name ?? null}
           aiAvatarId={aiOpponent?.avatarId ?? null}
+          onRematch={handleRematch}
         />
       )}
     </div>

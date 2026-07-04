@@ -29,7 +29,7 @@ function loadLocalGame() {
   try { return JSON.parse(sessionStorage.getItem(LOCAL_GAME_KEY) || "null"); } catch { return null; }
 }
 
-export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false, aiName = null, aiAvatarId = null }) {
+export default function GameBoard({ gameMode, onBackToHome, socket = null, myIndex = 0, roomCode = null, playerAvatars = [DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2], localPseudo = "", remotePseudo = null, initialBankroll = 100000, resumed = false, aiName = null, aiAvatarId = null, onRematch = null }) {
   const isLocalGame = gameMode === "ia" || gameMode === "multiplayer";
   // Restaure la partie uniquement si ce montage fait suite à un rafraîchissement (resumed)
   const savedGame = resumed && isLocalGame ? loadLocalGame() : null;
@@ -1435,7 +1435,12 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
             <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
               {!(gameMode === "online" && opponentLeft) && (
                 <button
-                  onClick={() => { playStartSound(); restartGame(); }}
+                  onClick={() => {
+                    // En mode "En ligne" (IA), rejouer = rechercher un nouvel adversaire
+                    if (gameMode === "ia" && onRematch) { onRematch(); return; }
+                    playStartSound();
+                    restartGame();
+                  }}
                   style={{
                     padding: "13px 28px",
                     fontSize: "13px",
