@@ -4,7 +4,7 @@ import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
 import SoundControls from "./SoundControls";
-import { playCardSound, playBonusSound, playLoseSound, speak } from "./audio";
+import { playCardSound, playBonusSound, playLoseSound, playSelectSound, speak } from "./audio";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
@@ -632,6 +632,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       }}>
         <button
           onClick={() => {
+            playSelectSound();
             if (gameMode === "online" && socket) {
               socket.emit("leaveRoom", { roomCode });
             }
@@ -1440,6 +1441,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
               )}
               <button
                 onClick={() => {
+                  playSelectSound();
                   if (gameMode === "online" && socket) {
                     socket.emit("leaveRoom", { roomCode });
                   }

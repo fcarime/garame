@@ -49,7 +49,7 @@ export function playCardSound() {
   bp.type = "bandpass"; bp.frequency.value = 1900; bp.Q.value = 0.9;
   const g = ac.createGain();
   g.gain.setValueAtTime(0.0001, now);
-  g.gain.exponentialRampToValueAtTime(0.28, now + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.5, now + 0.005);
   g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
   src.connect(bp).connect(g).connect(ac.destination);
   src.start(now); src.stop(now + dur);
@@ -85,13 +85,13 @@ async function playFile(src, volume = 1) {
 }
 
 // Son de manche gagnée
-export function playBonusSound() { playFile(bonusUrl, 0.85); }
+export function playBonusSound() { playFile(bonusUrl, 1.0); }
 
 // Son de sélection d'un bouton de lancement de partie
-export function playSelectSound() { playFile(selectUrl, 0.7); }
+export function playSelectSound() { playFile(selectUrl, 1.0); }
 
 // Son de partie perdue
-export function playLoseSound() { playFile(loseUrl, 0.85); }
+export function playLoseSound() { playFile(loseUrl, 1.0); }
 
 // ── Voix (KORAS / 33 Export) via synthèse vocale du navigateur ─────────────
 export function speak(text) {
@@ -137,7 +137,7 @@ function playMusicOnce() {
   src.connect(musicGain);
   src.onended = () => {
     if (musicStopped) return;
-    musicTimer = setTimeout(playMusicOnce, 200); // pause de 0,2 s entre les boucles
+    musicTimer = setTimeout(playMusicOnce, 400); // pause de 0,4 s entre les boucles
   };
   musicSource = src;
   src.start();

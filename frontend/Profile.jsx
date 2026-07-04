@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAvatarStyle, AVATARS } from "./avatars";
+import { playSelectSound } from "./audio";
 
 const STORAGE_KEY = "garame_profile";
 
@@ -198,7 +199,7 @@ export default function Profile({ onBack, avatarId = 0, bankroll = 100000, onLog
         boxSizing: "border-box",
       }}>
         <button
-          onClick={onBack}
+          onClick={() => { playSelectSound(); onBack(); }}
           style={{
             background: "transparent",
             border: "1px solid rgba(0,217,255,0.25)",

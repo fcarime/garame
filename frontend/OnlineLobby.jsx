@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
+import { playSelectSound } from "./audio";
 
 let socketInstance = null;
 
@@ -231,7 +232,7 @@ export default function OnlineLobby({ pseudo, onGameStart, onBack }) {
             )}
 
             <button
-              onClick={onBack}
+              onClick={() => { playSelectSound(); onBack(); }}
               style={{
                 background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)",
@@ -303,7 +304,7 @@ export default function OnlineLobby({ pseudo, onGameStart, onBack }) {
             </div>
 
             <button
-              onClick={onBack}
+              onClick={() => { playSelectSound(); onBack(); }}
               style={{
                 background: "transparent",
                 border: "1px solid rgba(255,255,255,0.1)",
