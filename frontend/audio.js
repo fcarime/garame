@@ -1,5 +1,11 @@
-// Audio central : réglages (musique / effets), son de carte, voix, ambiance synthétisée.
+// Audio central : réglages (musique / effets), son de carte, voix, sons mp3.
 import { useSyncExternalStore } from "react";
+// Les mp3 sont importés (comme les images) pour obtenir une URL valide via Vite,
+// car frontend/public n'est pas le publicDir servi à la racine.
+import musicUrl from "./public/sounds/music_ambiance.mp3";
+import bonusUrl from "./public/sounds/player_succes_manche.mp3";
+import selectUrl from "./public/sounds/select_button.mp3";
+import loseUrl from "./public/sounds/player_lose_partis.mp3";
 
 const KEY = "garame_audio";
 
@@ -79,13 +85,13 @@ async function playFile(src, volume = 1) {
 }
 
 // Son de manche gagnée
-export function playBonusSound() { playFile("/sounds/player_succes_manche.mp3", 0.85); }
+export function playBonusSound() { playFile(bonusUrl, 0.85); }
 
 // Son de sélection d'un bouton de lancement de partie
-export function playSelectSound() { playFile("/sounds/select_button.mp3", 0.7); }
+export function playSelectSound() { playFile(selectUrl, 0.7); }
 
 // Son de partie perdue
-export function playLoseSound() { playFile("/sounds/player_lose_partis.mp3", 0.85); }
+export function playLoseSound() { playFile(loseUrl, 0.85); }
 
 // ── Voix (KORAS / 33 Export) via synthèse vocale du navigateur ─────────────
 export function speak(text) {
@@ -108,7 +114,7 @@ async function startMusic() {
   const ac = audioCtx();
   if (!ac || musicSource || musicStarting) return;
   musicStarting = true;
-  const buf = await loadBuffer("/sounds/music_ambiance.mp3");
+  const buf = await loadBuffer(musicUrl);
   musicStarting = false;
   if (!buf || !settings.music || musicSource) return;
   musicGain = ac.createGain();
