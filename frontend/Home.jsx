@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AVATARS, getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
+import SoundControls from "./SoundControls";
 
 export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo = "" }) {
   const [selectedAvatars, setSelectedAvatars] = useState([DEFAULT_AVATARS.player1, DEFAULT_AVATARS.player2]);
@@ -92,6 +93,11 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
         }}>
           Jeu de Cartes Traditionnel Africain
         </div>
+      </div>
+
+      {/* Contrôles audio */}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <SoundControls />
       </div>
 
       {/* Boutons de mode */}

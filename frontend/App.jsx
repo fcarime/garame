@@ -6,6 +6,7 @@ import Profile from "./Profile";
 import Auth from "./Auth";
 import Matchmaking from "./Matchmaking";
 import { getSocket } from "./OnlineLobby";
+import { armAudioOnFirstGesture } from "./audio";
 import "./App.css";
 
 function loadAuth() {
@@ -53,6 +54,7 @@ export default function App() {
 
   useEffect(() => {
     if (localPseudo) fetchBankroll(localPseudo);
+    armAudioOnFirstGesture();
   }, []);
 
   // Sauvegarde la navigation courante à chaque changement (pour le refresh)

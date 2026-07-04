@@ -3,6 +3,8 @@ import Hand from "./Hand";
 import Card from "./Card";
 import PokerTable from "./PokerTable";
 import CardBack from "./CardBack";
+import SoundControls from "./SoundControls";
+import { playCardSound, playBonusSound, speak } from "./audio";
 import { getAvatarStyle, DEFAULT_AVATARS } from "./avatars";
 import { BG_ACCENT } from "./backgrounds";
 import backgroundUrl from "./public/barckground_0.png";
@@ -150,6 +152,16 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   }, [isLocalGame, gameState, hands, pot, scores, currentRound, trick, leadSuit,
       currentPlayer, roundStarter, message, gameOver, playedCards,
       specialWinInfo, roundWinInfo, exportInfo, myBankroll, bgIndex]);
+
+  // Voix : « KORAS » / « 33 Export » quand l'overlay apparaît (pas au 1er montage)
+  const voiceMountedRef = useRef(false);
+  useEffect(() => { voiceMountedRef.current = true; }, []);
+  useEffect(() => { if (voiceMountedRef.current && exportInfo) speak("33 Export"); }, [exportInfo]);
+  useEffect(() => {
+    if (!voiceMountedRef.current || !roundWinInfo) return;
+    playBonusSound();
+    if (roundWinInfo.hasBonusWin) speak("Koras");
+  }, [roundWinInfo]);
 
   // Écoute des événements socket en mode online
   useEffect(() => {
@@ -383,6 +395,8 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
       return;
     }
 
+    playCardSound();
+
     const newHands = [...hands];
     newHands[playerIdx] = newHands[playerIdx].filter((_, i) => i !== cardIndex);
     setHands(newHands);
@@ -594,6 +608,11 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           .gameboard-header { padding-top: 18px !important; }
         }
       `}</style>
+
+      {/* Contrôles audio (compact) */}
+      <div style={{ position: "absolute", top: "10px", right: "12px", zIndex: 30 }}>
+        <SoundControls compact />
+      </div>
 
       {/* ── Header compact ── */}
       <div className="gameboard-header" style={{
