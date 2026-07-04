@@ -1227,7 +1227,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                     marginBottom: "4px",
                     animation: "glowGold 1.4s ease-in-out 0.6s infinite",
                   }}>
-                    CORRA&nbsp;!
+                    KORA&nbsp;!
                   </div>
 
                   {/* Carte 3 mise en avant */}
