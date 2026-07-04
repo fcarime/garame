@@ -467,7 +467,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
   // Applique le résultat d'une partie Sans mise (IA) au solde du compte et le persiste
   const applyLocalResult = (humanWon) => {
     if (gameMode !== "ia") return;
-    const next = Math.max(0, myBankroll + (humanWon ? 2000 : -2000));
+    const next = Math.max(0, myBankroll + (humanWon ? 1000 : -1000));
     setMyBankroll(next);
     onBankrollChange?.(next); // remonte à App pour que le Rejouer parte de la bonne valeur
     if (localPseudo) {
@@ -523,7 +523,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
     }
 
     if (isFinalWin) {
-      setMessage(`${players[winner].name} remporte la partie et les 2 000 FCFA!`);
+      setMessage(`${players[winner].name} remporte la partie et gagne 1 000 FCFA!`);
       if (gameMode === "online" && socket && myIndex === 0) {
         socket.emit("gameResult", {
           roomCode,
@@ -1446,7 +1446,7 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
                 fontSize: "28px", fontWeight: "900", color: "#F59E0B",
                 textShadow: "0 0 20px rgba(245,158,11,0.5)",
               }}>
-                {scores[myIndex] >= scores[opponentIndex] ? "+2 000" : "-2 000"} FCFA
+                {scores[myIndex] >= scores[opponentIndex] ? "+1 000" : "-1 000"} FCFA
               </div>
               {(gameMode === "online" || gameMode === "ia") && (
                 <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>

@@ -122,14 +122,14 @@ io.on("connection", (socket) => {
   socket.on("gameResult", ({ roomCode, winnerPseudo, loserPseudo }) => {
     if (!winnerPseudo || !loserPseudo) return;
 
-    const { winnerBankroll, loserBankroll } = db.applyGameResult(winnerPseudo, loserPseudo, 2000);
+    const { winnerBankroll, loserBankroll } = db.applyGameResult(winnerPseudo, loserPseudo, 1000);
 
     io.to(roomCode).emit("bankrollUpdated", {
       [winnerPseudo]: winnerBankroll,
       [loserPseudo]:  loserBankroll,
     });
 
-    console.log(`Résultat salle ${roomCode} : ${winnerPseudo} +2000 / ${loserPseudo} -2000`);
+    console.log(`Résultat salle ${roomCode} : ${winnerPseudo} +1000 / ${loserPseudo} -1000`);
   });
 
   // Relais mains début de manche (avec état complet pour resync)

@@ -36,14 +36,14 @@ Ordre croissant : **3 < 4 < 5 < 6 < 7 < 8 < 9**
 ## Mise
 
 - La partie est une **mise unique** : chaque joueur engage **1 000 FCFA**, soit un pot total de **2 000 FCFA**.
-- Le gagnant de la partie remporte les **2 000 FCFA**.
+- Le gagnant récupère sa mise et remporte celle de l'adversaire, soit un **gain net de 1 000 FCFA** (le perdant perd **1 000 FCFA**).
 - La mise ne change pas entre les manches — c'est le résultat final de la partie qui détermine qui encaisse.
 
 ---
 
 ## Condition de fin de partie
 
-- Le premier joueur à remporter **3 manches** gagne la partie et encaisse les **2 000 FCFA**.
+- Le premier joueur à remporter **3 manches** gagne la partie et encaisse un **gain net de 1 000 FCFA**.
 - Le bonus "Dernier 3" peut faire sauter 2 manches d'un coup (voir ci-dessous).
 
 ---

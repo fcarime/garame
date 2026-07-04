@@ -226,7 +226,7 @@ export default function Home({ onStartGame, onProfile, bankroll = 100000, pseudo
           ["📈", "Valeurs : 3 < 4 < 5 < 6 < 7 < 8 < 9"],
           ["🃏", "Suivez la couleur demandée ou jouez librement"],
           ["🎯", "Gagnez le dernier pli pour remporter la manche"],
-          ["💰", "3 manches gagnées = 2 000 FCFA remportés"],
+          ["💰", "3 manches gagnées = 1 000 FCFA gagnés (mise de l'adversaire)"],
         ].map(([icon, text]) => (
           <div key={text} style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginBottom: "6px" }}>
             <span style={{ fontSize: "12px", flexShrink: 0 }}>{icon}</span>

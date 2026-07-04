@@ -92,10 +92,10 @@ io.on("connection", (socket) => {
     const winner = getUser(winnerPseudo);
     const loser  = getUser(loserPseudo);
 
-    winner.bankroll += 2000;
+    winner.bankroll += 1000;
     winner.gamesWon++;
     winner.gamesPlayed++;
-    loser.bankroll = Math.max(0, loser.bankroll - 2000);
+    loser.bankroll = Math.max(0, loser.bankroll - 1000);
     loser.gamesPlayed++;
 
     io.to(roomCode).emit("bankrollUpdated", {
@@ -103,7 +103,7 @@ io.on("connection", (socket) => {
       [loserPseudo]:  loser.bankroll,
     });
 
-    console.log(`Résultat salle ${roomCode} : ${winnerPseudo} +2000 / ${loserPseudo} -2000`);
+    console.log(`Résultat salle ${roomCode} : ${winnerPseudo} +1000 / ${loserPseudo} -1000`);
   });
 
   // Relais mains début de manche (avec état complet pour resync)
