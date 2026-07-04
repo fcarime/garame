@@ -613,11 +613,12 @@ export default function GameBoard({ gameMode, onBackToHome, socket = null, myInd
           }
           .poker-table-bg { display: none !important; }
           .gameboard-header { padding-top: 18px !important; }
+          .gb-audio-controls { top: 64px !important; }
         }
       `}</style>
 
       {/* Contrôles audio (compact) */}
-      <div style={{ position: "absolute", top: "10px", right: "12px", zIndex: 30 }}>
+      <div className="gb-audio-controls" style={{ position: "absolute", top: "10px", right: "12px", zIndex: 30 }}>
         <SoundControls compact />
       </div>
 
