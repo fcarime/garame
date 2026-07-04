@@ -84,7 +84,7 @@ function startMusic() {
   if (!musicEl) {
     musicEl = new Audio("/sounds/music_ambiance.mp3");
     musicEl.loop = true;
-    musicEl.volume = 0.2;
+    musicEl.volume = 0.4;
   }
   musicEl.play().catch(() => {});
 }
